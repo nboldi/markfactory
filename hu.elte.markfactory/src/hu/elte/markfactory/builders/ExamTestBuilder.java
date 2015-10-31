@@ -30,10 +30,13 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
-import hu.elte.markfactory.annotations.ExamTest;
-import hu.elte.markfactory.rewrite.AutocheckVisitor;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
+
+import hu.elte.markfactory.MarkfactoryPlugin;
+import hu.elte.markfactory.annotations.ExamTest;
+import hu.elte.markfactory.project.ProjectCreator;
+import hu.elte.markfactory.rewrite.AutocheckVisitor;
 
 public class ExamTestBuilder extends IncrementalProjectBuilder {
 
@@ -99,14 +102,13 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 	}
 
 	private void generateModifiedFile(ICompilationUnit compUnit) {
-		String destFile = "";
 		try {
 			ASTParser parser = ASTParser.newParser(AST.JLS8);
 			parser.setSource(compUnit);
 			parser.setResolveBindings(true);
 			CompilationUnit astRoot = (CompilationUnit) parser.createAST(null);
 			AST ast = astRoot.getAST();
-
+			IProject project = compUnit.getResource().getProject();
 			astRoot.recordModifications();
 
 			Document document = new Document(compUnit.getSource());
@@ -117,31 +119,21 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 				TextEdit edits = astRoot.rewrite(document, null);
 				edits.apply(document);
 				String newSource = document.get();
-				destFile = writeOutResult(compUnit, newSource);
+				writeOutResult(compUnit, newSource, project.getName() + "-autotest");
 			}
 
-		} catch (MalformedTreeException | BadLocationException | CoreException e) {
-			System.err.println("Source transformation failed:");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.err.println("Source transformation failed for '" + destFile
-					+ "':");
-			e.printStackTrace();
+		} catch (MalformedTreeException | BadLocationException | CoreException | IOException e) {
+			MarkfactoryPlugin.logError("Code transformation failed", e);
 		}
 	}
 
-	private String writeOutResult(ICompilationUnit compUnit, String newSource)
-			throws IOException, FileNotFoundException, CoreException {
-		IProject project = compUnit.getResource().getProject();
-		IPath originalPath = compUnit.getResource().getProjectRelativePath();
+	private void writeOutResult(ICompilationUnit compUnit, String newSource, String projectName)
+			throws IOException, FileNotFoundException, CoreException {		
+		
+		IProject autoProject = ProjectCreator.createOrUpdateProject(projectName);
+		IPath path = compUnit.getResource().getProjectRelativePath();
 
-		// TODO: put into another project instead
-		IPath newPath = originalPath
-				.removeLastSegments(1)
-				.append(originalPath.removeFileExtension().lastSegment()
-						+ "Refl")
-				.addFileExtension(originalPath.getFileExtension());
-		File outFile = project.getLocation().append(newPath).toFile();
+		File outFile = autoProject.getLocation().append(path).toFile();
 		if (!outFile.exists()) {
 			outFile.getParentFile().mkdirs();
 			outFile.createNewFile();
@@ -150,9 +142,8 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 		out.println(newSource);
 		out.close();
 
-		project.refreshLocal(IProject.DEPTH_INFINITE, null);
-		project.findMember(newPath).setDerived(true, null);
-		return outFile.getAbsolutePath();
+		autoProject.refreshLocal(IProject.DEPTH_INFINITE, null);
+		autoProject.findMember(path).setDerived(true, null);
 	}
 
 	private void addResourceAsCompUnit(final List<ICompilationUnit> compUnits,
