@@ -3,11 +3,12 @@ Bundle-ManifestVersion: 2
 Bundle-Name: MarkFactory
 Bundle-SymbolicName: hu.elte.markfactory;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: hu.elte.markfactory.Activator
+Bundle-Activator: hu.elte.markfactory.MarkfactoryPlugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.core.resources,
  org.eclipse.jdt.core,
- org.eclipse.text;bundle-version="3.5.300"
+ org.eclipse.text;bundle-version="3.5.300",
+ org.eclipse.jdt.ui;bundle-version="3.11.1"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy

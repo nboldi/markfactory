@@ -30,6 +30,26 @@
          </command>
       </menuContribution>
    </extension>
-
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="hu.elte.markfactory.MarkfactoryPlugin">
+      </startup>
+   </extension>
+  <extension
+         point="org.eclipse.jdt.core.classpathContainerInitializer">
+      <classpathContainerInitializer
+            class="hu.elte.markfactory.buildpath.RuntimeLibraryContainerInitializer"
+            id="hu.elte.markfactory.runtimeClasspathInitializer">
+      </classpathContainerInitializer>
+   </extension>
+   <extension
+         point="org.eclipse.jdt.ui.classpathContainerPage">
+      <classpathContainerPage
+            class="hu.elte.markfactory.buildpath.RuntimeLibraryContainerWizardPage"
+            id="hu.elte.markfactory.runtimeClasspathInitializer"
+            name="%runtime.library.name">
+      </classpathContainerPage>
+   </extension>
 
 </plugin>
