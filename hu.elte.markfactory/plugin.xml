@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         id="org.eclipse.markfactory.examtestbuilder"
+         name="Exam Test Builder"
+         point="org.eclipse.core.resources.builders">
+      <builder>
+         <run
+               class="hu.elte.markfactory.builders.ExamTestBuilder">
+         </run>
+      </builder>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            defaultHandler="hu.elte.markfactory.commands.AddBuilderHandler"
+            id="hu.elte.markfactory.addbuildercommand"
+            name="Add Exam Test Builder">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.ui.projectConfigure?after=additions">
+         <command
+               commandId="hu.elte.markfactory.addbuildercommand"
+               style="push">
+         </command>
+      </menuContribution>
+   </extension>
+
+
+</plugin>
