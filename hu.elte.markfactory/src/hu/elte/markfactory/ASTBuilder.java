@@ -12,6 +12,7 @@ import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
@@ -32,7 +33,7 @@ public class ASTBuilder {
 	public <N extends ASTNode> N copy(N node) {
 		return (N) ASTNode.copySubtree(ast, node);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public Block newBlock(Statement... stmts) {
 		Block newBlock = ast.newBlock();
@@ -45,8 +46,7 @@ public class ASTBuilder {
 	}
 
 	public SingleVariableDeclaration newVariableDecl(String name, String type) {
-		SingleVariableDeclaration exceptionDecl = ast
-				.newSingleVariableDeclaration();
+		SingleVariableDeclaration exceptionDecl = ast.newSingleVariableDeclaration();
 		exceptionDecl.setName(ast.newSimpleName(name));
 		exceptionDecl.setType(ast.newSimpleType(ast.newName(type)));
 		return exceptionDecl;
@@ -64,8 +64,7 @@ public class ASTBuilder {
 	}
 
 	@SuppressWarnings("unchecked")
-	public MethodInvocation newCall(Expression obj, String funName,
-			Expression... args) {
+	public MethodInvocation newCall(Expression obj, String funName, Expression... args) {
 		MethodInvocation call = ast.newMethodInvocation();
 		call.setExpression(obj);
 		call.setName(ast.newSimpleName(funName));
@@ -92,8 +91,7 @@ public class ASTBuilder {
 		return catchClause;
 	}
 
-	public TryStatement newTryCatch(Block tryBlock, String type, String name,
-			Block catchBlock) {
+	public TryStatement newTryCatch(Block tryBlock, String type, String name, Block catchBlock) {
 		return newTryCatch(tryBlock, newCatchClause(type, name, catchBlock));
 	}
 
@@ -105,8 +103,7 @@ public class ASTBuilder {
 		return tryStmt;
 	}
 
-	public Expression newArrayCreation(String canonicalName,
-			ArrayInitializer initializer) {
+	public Expression newArrayCreation(String canonicalName, ArrayInitializer initializer) {
 		ArrayCreation ac = ast.newArrayCreation();
 		ac.setInitializer(initializer);
 		ac.setType(ast.newArrayType(newType(canonicalName)));
@@ -118,8 +115,7 @@ public class ASTBuilder {
 	}
 
 	@SuppressWarnings("unchecked")
-	public ArrayCreation newArrayCreation(Type type,
-			Collection<Expression> values) {
+	public ArrayCreation newArrayCreation(Type type, Collection<Expression> values) {
 		ArrayCreation ac = ast.newArrayCreation();
 		ArrayInitializer initializer = ast.newArrayInitializer();
 		for (Expression expr : values) {
@@ -140,9 +136,14 @@ public class ASTBuilder {
 		return typeLit;
 	}
 
-	public ASTNode newStaticCall(String className, String funName,
-			Expression... args) {
+	public ASTNode newStaticCall(String className, String funName, Expression... args) {
 		return newCall(ast.newName(className), funName, args);
+	}
+
+	public Expression paren(Expression expr) {
+		ParenthesizedExpression newExpr = ast.newParenthesizedExpression();
+		newExpr.setExpression(expr);
+		return newExpr;
 	}
 
 }

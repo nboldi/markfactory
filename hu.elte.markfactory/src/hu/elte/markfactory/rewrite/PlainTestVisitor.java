@@ -14,27 +14,23 @@ import hu.elte.markfactory.annotations.TestSolution;
 
 public class PlainTestVisitor extends ASTVisitor {
 
-	private static List<String> annotationsToRemove = Arrays.asList(
-			TestSolution.class.getCanonicalName(),
-			DummyChild.class.getCanonicalName(),
-			ExamTest.class.getCanonicalName(),
+	private static List<String> annotationsToRemove = Arrays.asList(TestSolution.class.getCanonicalName(),
+			DummyChild.class.getCanonicalName(), ExamTest.class.getCanonicalName(),
 			ExamExercise.class.getCanonicalName());
 
 	@Override
 	public boolean visit(TypeDeclaration node) {
 		return removeAnnots(node.modifiers());
 	}
-	
+
 	@Override
 	public boolean visit(MethodDeclaration node) {
 		return removeAnnots(node.modifiers());
 	}
 
 	private boolean removeAnnots(List<?> modifiers) {
-		return modifiers.removeIf(
-				mod -> mod instanceof Annotation
-						&& annotationsToRemove.contains(((Annotation) mod)
-								.getTypeName().toString()));
+		return modifiers.removeIf(mod -> mod instanceof Annotation
+				&& annotationsToRemove.contains(((Annotation) mod).getTypeName().toString()));
 	}
 
 }

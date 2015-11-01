@@ -46,19 +46,16 @@ public class TypeTransformer {
 
 			for (int i = 0; i < typeArguments.size(); i++) {
 				final int ind = i;
-				Optional<Type> cleanTypeParam = cleanType(
-						(Type) typeArguments.get(ind),
+				Optional<Type> cleanTypeParam = cleanType((Type) typeArguments.get(ind),
 						typeBnd.getTypeArguments()[ind]);
-				cleanTypeParam
-						.ifPresent(t -> pCopy.typeArguments().set(ind, t));
+				cleanTypeParam.ifPresent(t -> pCopy.typeArguments().set(ind, t));
 				changed |= cleanTypeParam.isPresent();
 			}
 		}
 		if (type.isArrayType()) {
 			ArrayType at = (ArrayType) type;
 			ArrayType aCopy = (ArrayType) copy;
-			Optional<Type> cleanElemType = cleanType(at.getElementType(),
-					typeBnd.getElementType());
+			Optional<Type> cleanElemType = cleanType(at.getElementType(), typeBnd.getElementType());
 			cleanElemType.ifPresent(t -> aCopy.setElementType(t));
 			changed |= cleanElemType.isPresent();
 		}
@@ -90,8 +87,7 @@ public class TypeTransformer {
 
 	public Type typeFromBinding(ITypeBinding typeBinding) {
 		if (typeBinding.isPrimitive()) {
-			return ast.newPrimitiveType(PrimitiveType.toCode(typeBinding
-					.getName()));
+			return ast.newPrimitiveType(PrimitiveType.toCode(typeBinding.getName()));
 		}
 
 		if (typeBinding.isCapture()) {
@@ -99,8 +95,7 @@ public class TypeTransformer {
 			WildcardType capType = ast.newWildcardType();
 			ITypeBinding bound = wildCard.getBound();
 			if (bound != null) {
-				capType.setBound(typeFromBinding(bound),
-						wildCard.isUpperbound());
+				capType.setBound(typeFromBinding(bound), wildCard.isUpperbound());
 			}
 			return capType;
 		}
@@ -111,9 +106,7 @@ public class TypeTransformer {
 		}
 
 		if (typeBinding.isParameterizedType()) {
-			ParameterizedType type = ast
-					.newParameterizedType(typeFromBinding(typeBinding
-							.getErasure()));
+			ParameterizedType type = ast.newParameterizedType(typeFromBinding(typeBinding.getErasure()));
 
 			@SuppressWarnings("unchecked")
 			List<Type> newTypeArgs = type.typeArguments();

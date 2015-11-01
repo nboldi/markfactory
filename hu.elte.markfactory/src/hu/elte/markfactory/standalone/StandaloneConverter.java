@@ -17,20 +17,20 @@ public class StandaloneConverter {
 
 	List<String> inputFiles = new LinkedList<>();
 	private ASTParser parser;
-	
+
 	public static void main(String[] args) throws IOException {
 		StandaloneConverter converter = new StandaloneConverter();
 		converter.parseCmdArgs(args);
 		converter.convert();
 	}
-	
+
 	public StandaloneConverter() {
 		parser = ASTParser.newParser(AST.JLS8);
 		parser.setResolveBindings(true);
 	}
 
 	private void parseCmdArgs(String[] args) {
-		
+
 	}
 
 	private void convert() {
@@ -40,11 +40,10 @@ public class StandaloneConverter {
 			encodings[i - 1] = "UTF8";
 			sourceFiles[i - 1] = inputFiles.get(i);
 		}
-		parser.setEnvironment(
-				new String[] { "." + File.pathSeparator + inputFiles.get(0) },
+		parser.setEnvironment(new String[] { "." + File.pathSeparator + inputFiles.get(0) },
 				new String[] { "." + File.pathSeparator + inputFiles.get(0) }, null, true);
-//		parser.createASTs(sourceFiles, encodings, new String[] {},
-//				new RewriterASTRequestor(), null);		
+		// parser.createASTs(sourceFiles, encodings, new String[] {},
+		// new RewriterASTRequestor(), null);
 	}
 
 }

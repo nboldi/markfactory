@@ -78,7 +78,7 @@ public class TypeHelpers {
 			return coded;
 		}
 	}
-	
+
 	public static String encodeType(String typeName) {
 		switch (typeName) {
 		case "int":
@@ -101,13 +101,13 @@ public class TypeHelpers {
 			return "Z";
 
 		default:
-			if(typeName.endsWith("[]")) {
+			if (typeName.endsWith("[]")) {
 				return "[" + encodeType2(typeName.substring(0, typeName.length() - 2));
 			}
 			return typeName;
 		}
 	}
-	
+
 	private static String encodeType2(String typeName) {
 		switch (typeName) {
 		case "int":
@@ -130,7 +130,7 @@ public class TypeHelpers {
 			return "Z";
 
 		default:
-			if(typeName.endsWith("[]")) {
+			if (typeName.endsWith("[]")) {
 				return "[" + encodeType2(typeName.substring(0, typeName.length() - 2));
 			}
 			return "L" + typeName + ";";
@@ -172,13 +172,11 @@ public class TypeHelpers {
 	}
 
 	public static String methodSignature(Method method) {
-		return method.getName() + "(" + showType(method.getParameterTypes())
-				+ ")";
+		return method.getName() + "(" + showType(method.getParameterTypes()) + ")";
 	}
 
 	public static String ctorSignature(Constructor<?> method) {
-		return method.getDeclaringClass().getSimpleName() + "("
-				+ showType(method.getParameterTypes()) + ")";
+		return method.getDeclaringClass().getSimpleName() + "(" + showType(method.getParameterTypes()) + ")";
 	}
 
 	public static Class<?>[] getTypes(Object... parameters) {
@@ -195,5 +193,5 @@ public class TypeHelpers {
 		}
 		return ptypes;
 	}
-	
+
 }

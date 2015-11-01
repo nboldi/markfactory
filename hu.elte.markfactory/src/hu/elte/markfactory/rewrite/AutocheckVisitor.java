@@ -83,24 +83,19 @@ public class AutocheckVisitor extends ASTVisitor {
 	public void endVisit(CompilationUnit node) {
 		boolean isTest = checkIfTestCompilation(node);
 		if (isTest) {
-			node.imports().removeIf(
-					id -> annotationDetector
-							.isTestSolution(((ImportDeclaration) id)
-									.resolveBinding()));
+			node.imports().removeIf(id -> annotationDetector.isTestSolution(((ImportDeclaration) id).resolveBinding()));
 		}
 	}
 
 	private boolean checkIfTestCompilation(CompilationUnit node) {
 		boolean isTest = false;
 		for (Object type : node.types()) {
-			if (annotationDetector.isTestSolution(((TypeDeclaration) type)
-					.resolveBinding())) {
+			if (annotationDetector.isTestSolution(((TypeDeclaration) type).resolveBinding())) {
 				isTest = true;
 			} else {
 				if (isTest) {
 					throw new TranslationException(
-							"There are test and non-test types in the same compilation unit: "
-									+ node);
+							"There are test and non-test types in the same compilation unit: " + node);
 				}
 			}
 		}
@@ -128,8 +123,7 @@ public class AutocheckVisitor extends ASTVisitor {
 	 */
 	@Override
 	public boolean visit(MethodDeclaration node) {
-		typeTransformer.cleanType(node.getReturnType2()).ifPresent(
-				t -> node.setReturnType2(t));
+		typeTransformer.cleanType(node.getReturnType2()).ifPresent(t -> node.setReturnType2(t));
 		return annotationDetector.isExamExercise(node);
 	}
 
@@ -144,23 +138,15 @@ public class AutocheckVisitor extends ASTVisitor {
 	}
 
 	private void wrapBodyInTryCatchBlock(MethodDeclaration node) {
-		MethodInvocation traceCall = builder.newCall(ast.newSimpleName("e"),
-				"printStackTrace");
-		ReturnStatement returnStmt = builder
-				.newReturn(createExpressionForType(node.getReturnType2()));
+		MethodInvocation traceCall = builder.newCall(ast.newSimpleName("e"), "printStackTrace");
+		ReturnStatement returnStmt = builder.newReturn(createExpressionForType(node.getReturnType2()));
 		Block tryBlock = builder.copy(node.getBody());
 		Block print = builder.newBlock(
-				ast.newExpressionStatement(builder.newStaticCall("output",
-						ast.newSimpleName("e"))), returnStmt);
-		Block trace = builder.newBlock(ast.newExpressionStatement(traceCall),
-				builder.copy(returnStmt));
-		TryStatement tryStmt = builder
-				.newTryCatch(tryBlock,
-						builder.newCatchClause(
-								MissingProgramElementException.class
-										.getCanonicalName(), "e", print),
-						builder.newCatchClause(
-								Throwable.class.getCanonicalName(), "e", trace));
+				ast.newExpressionStatement(builder.newStaticCall("output", ast.newSimpleName("e"))), returnStmt);
+		Block trace = builder.newBlock(ast.newExpressionStatement(traceCall), builder.copy(returnStmt));
+		TryStatement tryStmt = builder.newTryCatch(tryBlock,
+				builder.newCatchClause(MissingProgramElementException.class.getCanonicalName(), "e", print),
+				builder.newCatchClause(Throwable.class.getCanonicalName(), "e", trace));
 		node.setBody(builder.newBlock(tryStmt));
 	}
 
@@ -198,23 +184,19 @@ public class AutocheckVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(SingleVariableDeclaration node) {
 		if (annotationDetector.isTestSolution(node.getType().resolveBinding())) {
-			node.setType(typeTransformer.mostSpecificReplacement(node.getType()
-					.resolveBinding()));
+			node.setType(typeTransformer.mostSpecificReplacement(node.getType().resolveBinding()));
 		}
-		typeTransformer.cleanType(node.getType()).ifPresent(
-				t -> node.setType(t));
+		typeTransformer.cleanType(node.getType()).ifPresent(t -> node.setType(t));
 		return super.visit(node);
 	}
 
 	@Override
 	public boolean visit(VariableDeclarationExpression node) {
 		if (annotationDetector.isTestSolution(node.resolveTypeBinding())) {
-			SimpleType replacement = typeTransformer
-					.mostSpecificReplacement(node.resolveTypeBinding());
+			SimpleType replacement = typeTransformer.mostSpecificReplacement(node.resolveTypeBinding());
 			node.setType(replacement);
 		}
-		typeTransformer.cleanType(node.getType()).ifPresent(
-				t -> node.setType(t));
+		typeTransformer.cleanType(node.getType()).ifPresent(t -> node.setType(t));
 		return super.visit(node);
 	}
 
@@ -226,12 +208,10 @@ public class AutocheckVisitor extends ASTVisitor {
 	public boolean visit(FieldDeclaration node) {
 		Type newType = node.getType();
 		if (annotationDetector.isTestSolution(newType.resolveBinding())) {
-			SimpleType replacement = typeTransformer
-					.mostSpecificReplacement(newType.resolveBinding());
+			SimpleType replacement = typeTransformer.mostSpecificReplacement(newType.resolveBinding());
 			node.setType(replacement);
 		}
-		typeTransformer.cleanType(node.getType()).ifPresent(
-				t -> node.setType(t));
+		typeTransformer.cleanType(node.getType()).ifPresent(t -> node.setType(t));
 		return super.visit(node);
 	}
 
@@ -242,12 +222,10 @@ public class AutocheckVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(VariableDeclarationStatement node) {
 		if (annotationDetector.isTestSolution(node.getType().resolveBinding())) {
-			SimpleType replacement = typeTransformer
-					.mostSpecificReplacement(node.getType().resolveBinding());
+			SimpleType replacement = typeTransformer.mostSpecificReplacement(node.getType().resolveBinding());
 			node.setType(replacement);
 		}
-		typeTransformer.cleanType(node.getType()).ifPresent(
-				t -> node.setType(t));
+		typeTransformer.cleanType(node.getType()).ifPresent(t -> node.setType(t));
 		return super.visit(node);
 	}
 
@@ -258,16 +236,11 @@ public class AutocheckVisitor extends ASTVisitor {
 			Type elementType = nodeType.getElementType();
 			ITypeBinding typeBnd = elementType.resolveBinding();
 
-			ArrayInitializer initializer = (ArrayInitializer) ASTNode
-					.copySubtree(ast, node.getInitializer());
-			ArrayType objArrayType = ast.newArrayType(builder
-					.newType(Object.class.getCanonicalName()));
-			Expression newArrayCreation = builder.newArrayCreation(
-					Object.class.getCanonicalName(), initializer);
-			replaceNode(node, builder.newCast(objArrayType, builder
-					.newStaticCall("createArray",
-							builder.newStringLit(typeBnd.getQualifiedName()),
-							newArrayCreation)));
+			ArrayInitializer initializer = (ArrayInitializer) ASTNode.copySubtree(ast, node.getInitializer());
+			ArrayType objArrayType = ast.newArrayType(builder.newType(Object.class.getCanonicalName()));
+			Expression newArrayCreation = builder.newArrayCreation(Object.class.getCanonicalName(), initializer);
+			replaceNode(node, builder.newCast(objArrayType, builder.newStaticCall("createArray",
+					builder.newStringLit(typeBnd.getQualifiedName()), newArrayCreation)));
 		}
 	}
 
@@ -285,42 +258,34 @@ public class AutocheckVisitor extends ASTVisitor {
 	 * resolved by replacing the {@code this.field} expression to a
 	 * {@code getField} call.
 	 */
-	public Optional<Expression> trasformAssignment(Expression leftSide,
-			Expression rightSide) {
+	public Optional<Expression> trasformAssignment(Expression leftSide, Expression rightSide) {
 		if (leftSide instanceof FieldAccess) {
 			FieldAccess fieldAccess = (FieldAccess) leftSide;
-			return Optional.of(genFieldSet(fieldAccess.resolveFieldBinding(),
-					fieldAccess.getExpression(), rightSide));
+			return Optional.of(genFieldSet(fieldAccess.resolveFieldBinding(), fieldAccess.getExpression(), rightSide));
 		} else if (leftSide instanceof QualifiedName) {
 			QualifiedName qNameField = (QualifiedName) leftSide;
-			return Optional.of(genFieldSet(
-					(IVariableBinding) qNameField.resolveBinding(),
-					qNameField.getQualifier(), rightSide));
+			return Optional.of(
+					genFieldSet((IVariableBinding) qNameField.resolveBinding(), qNameField.getQualifier(), rightSide));
 		} else if (leftSide instanceof SuperFieldAccess) {
-			throw new TranslationException(
-					"Super field access is not supported.");
+			throw new TranslationException("Super field access is not supported.");
 		}
 		return Optional.empty();
 	}
 
-	private Expression genFieldSet(IVariableBinding binding, Expression base,
-			Expression rightSide) {
+	private Expression genFieldSet(IVariableBinding binding, Expression base, Expression rightSide) {
 		if ((binding.getModifiers() & Modifier.STATIC) != 0) {
-			return builder.newStaticCall("staticFieldSet", builder
-					.newStringLit(binding.getDeclaringClass()
-							.getQualifiedName()), builder.newStringLit(binding
-					.getName()), builder.copy(rightSide));
+			return builder.newStaticCall("staticFieldSet",
+					builder.newStringLit(binding.getDeclaringClass().getQualifiedName()),
+					builder.newStringLit(binding.getName()), builder.copy(rightSide));
 		} else {
-			return builder.newStaticCall("fieldSet", builder.copy(base),
-					builder.newStringLit(binding.getName()),
+			return builder.newStaticCall("fieldSet", builder.copy(base), builder.newStringLit(binding.getName()),
 					builder.copy(rightSide));
 		}
 	}
 
 	@Override
 	public boolean visit(FieldAccess node) {
-		replaceNode(node,
-				genFieldGet(node.resolveFieldBinding(), node.getExpression()));
+		replaceNode(node, genFieldGet(node.resolveFieldBinding(), node.getExpression()));
 		return true;
 	}
 
@@ -334,27 +299,26 @@ public class AutocheckVisitor extends ASTVisitor {
 		if (!varBinding.isField()) {
 			return true;
 		}
-
-		replaceNode(node, genFieldGet(varBinding, node.getQualifier()));
+		if (annotationDetector.isTestSolution(node.getQualifier().resolveTypeBinding())) {
+			replaceNode(node, genFieldGet(varBinding, node.getQualifier()));
+		}
 		return true;
 	}
 
 	private Expression genFieldGet(IVariableBinding binding, Expression base) {
 		Expression get;
 		if ((binding.getModifiers() & Modifier.STATIC) != 0) {
-			get = builder.newStaticCall("staticFieldValue", builder
-					.newStringLit(binding.getDeclaringClass()
-							.getQualifiedName()), builder.newStringLit(binding
-					.getName()));
-		} else {
-			get = builder.newStaticCall("fieldValue", builder.copy(base),
+			get = builder.newStaticCall("staticFieldValue",
+					builder.newStringLit(binding.getDeclaringClass().getQualifiedName()),
 					builder.newStringLit(binding.getName()));
+		} else {
+			get = builder.newStaticCall("fieldValue", builder.copy(base), builder.newStringLit(binding.getName()));
 		}
 		ITypeBinding typeBinding = binding.getType();
-		Type newType = annotationDetector.isTestSolution(typeBinding) ? typeTransformer
-				.mostSpecificReplacement(typeBinding) : typeTransformer
-				.box(typeTransformer.typeFromBinding(typeBinding));
-		return builder.newCast(newType, get);
+		Type newType = annotationDetector.isTestSolution(typeBinding)
+				? typeTransformer.mostSpecificReplacement(typeBinding)
+				: typeTransformer.box(typeTransformer.typeFromBinding(typeBinding));
+		return builder.paren(builder.newCast(newType, get));
 	}
 
 	/**
@@ -364,19 +328,15 @@ public class AutocheckVisitor extends ASTVisitor {
 	public void endVisit(MethodInvocation node) {
 		IMethodBinding binding = node.resolveMethodBinding();
 		handleMethodTypeArgs(node.typeArguments());
-		if (binding != null
-				&& annotationDetector.isTestSolution(binding
-						.getDeclaringClass())) {
+		if (binding != null && annotationDetector.isTestSolution(binding.getDeclaringClass())) {
 			MethodInvocation newCall = createReflCall(node);
 			if (binding.getReturnType().getName().equals("void")) {
 				replaceNode(node, newCall);
 				return;
 			}
 			CastExpression cast = ast.newCastExpression();
-			Type bindingType = typeTransformer.typeFromBinding(binding
-					.getReturnType());
-			cast.setType(typeTransformer.cleanType(bindingType,
-					binding.getReturnType()).orElse(bindingType));
+			Type bindingType = typeTransformer.typeFromBinding(binding.getReturnType());
+			cast.setType(typeTransformer.cleanType(bindingType, binding.getReturnType()).orElse(bindingType));
 			cast.setExpression(newCall);
 			replaceNode(node, wrapExpression(cast, node.getParent()));
 		}
@@ -386,8 +346,7 @@ public class AutocheckVisitor extends ASTVisitor {
 		ASTNode parent = node.getParent();
 		StructuralPropertyDescriptor loc = node.getLocationInParent();
 		if (loc.isChildListProperty()) {
-			List<Object> siblings = (List<Object>) parent
-					.getStructuralProperty(loc);
+			List<Object> siblings = (List<Object>) parent.getStructuralProperty(loc);
 			siblings.set(siblings.indexOf(node), newNode);
 		} else {
 			parent.setStructuralProperty(loc, newNode);
@@ -397,8 +356,7 @@ public class AutocheckVisitor extends ASTVisitor {
 	private void handleMethodTypeArgs(List<Object> typeArguments) {
 		for (int i = 0; i < typeArguments.size(); ++i) {
 			final int ind = i;
-			typeTransformer.cleanType((Type) typeArguments.get(i)).ifPresent(
-					t -> typeArguments.set(ind, t));
+			typeTransformer.cleanType((Type) typeArguments.get(i)).ifPresent(t -> typeArguments.set(ind, t));
 		}
 	}
 
@@ -413,38 +371,29 @@ public class AutocheckVisitor extends ASTVisitor {
 		if (isStatic) {
 			newCall.setName(ast.newSimpleName("staticCall"));
 			StringLiteral className = ast.newStringLiteral();
-			className.setLiteralValue(methodBind.getDeclaringClass()
-					.getErasure().getQualifiedName());
+			className.setLiteralValue(methodBind.getDeclaringClass().getErasure().getQualifiedName());
 			newCall.arguments().add(className);
 			newCall.arguments().add(methodName);
 		} else {
 			newCall.setName(ast.newSimpleName("call"));
 			newCall.arguments().add(methodName);
-			newCall.arguments().add(
-					ASTNode.copySubtree(ast, original.getExpression()));
+			newCall.arguments().add(ASTNode.copySubtree(ast, original.getExpression()));
 		}
 		List<Expression> formalTypes = new LinkedList<>();
 		for (ITypeBinding type : methodBind.getParameterTypes()) {
-			formalTypes.add(builder.newStringLit(type.getErasure()
-					.getQualifiedName()));
+			formalTypes.add(builder.newStringLit(type.getErasure().getQualifiedName()));
 		}
-		newCall.arguments().add(
-				builder.newArrayCreation(builder.newType("java.lang.String"),
-						formalTypes));
+		newCall.arguments().add(builder.newArrayCreation(builder.newType("java.lang.String"), formalTypes));
 		LinkedList<Expression> newArgs = new LinkedList<>(original.arguments());
 		newArgs.replaceAll(a -> (Expression) ASTNode.copySubtree(ast, a));
-		newCall.arguments().add(
-				builder.newArrayCreation(builder.newType("java.lang.Object"),
-						newArgs));
+		newCall.arguments().add(builder.newArrayCreation(builder.newType("java.lang.Object"), newArgs));
 
 		return newCall;
 	}
 
 	public boolean visit(InstanceofExpression node) {
-		String typeName = node.getRightOperand().resolveBinding().getErasure()
-				.getQualifiedName();
-		MethodInvocation loadClass = builder.newCall(null, "loadClass",
-				builder.newStringLit(typeName));
+		String typeName = node.getRightOperand().resolveBinding().getErasure().getQualifiedName();
+		MethodInvocation loadClass = builder.newCall(null, "loadClass", builder.newStringLit(typeName));
 		MethodInvocation newCall = builder.newCall(loadClass, "isInstance",
 				(Expression) ASTNode.copySubtree(ast, node.getLeftOperand()));
 		replaceNode(node, newCall);
@@ -460,18 +409,16 @@ public class AutocheckVisitor extends ASTVisitor {
 
 		IMethodBinding ctorBinding = node.resolveConstructorBinding();
 		if (ctorBinding == null) {
-			System.err.println("Constructor binding cannot be resolved for: "
-					+ node + ". Please don't use diamond patterns.");
+			System.err.println(
+					"Constructor binding cannot be resolved for: " + node + ". Please don't use diamond patterns.");
 			return;
 		}
 		ITypeBinding constructedType = ctorBinding.getDeclaringClass();
-		typeTransformer.cleanType(node.getType()).ifPresent(
-				t -> node.setType(t));
+		typeTransformer.cleanType(node.getType()).ifPresent(t -> node.setType(t));
 		if (annotationDetector.isTestSolution(constructedType)) {
 			Expression newCall = createReflConstructorCall(node);
 			CastExpression cast = ast.newCastExpression();
-			cast.setType(typeTransformer
-					.mostSpecificReplacement(constructedType));
+			cast.setType(typeTransformer.mostSpecificReplacement(constructedType));
 			cast.setExpression(newCall);
 			replaceNode(node, wrapExpression(cast, node.getParent()));
 		}
@@ -482,22 +429,16 @@ public class AutocheckVisitor extends ASTVisitor {
 		MethodInvocation newCall = ast.newMethodInvocation();
 		newCall.setName(ast.newSimpleName("construct"));
 		StringLiteral className = ast.newStringLiteral();
-		className.setLiteralValue(ctorBinding.getDeclaringClass().getErasure()
-				.getQualifiedName());
+		className.setLiteralValue(ctorBinding.getDeclaringClass().getErasure().getQualifiedName());
 		newCall.arguments().add(className);
 		LinkedList<Expression> newArgs = new LinkedList<>(node.arguments());
 		newArgs.replaceAll(a -> (Expression) ASTNode.copySubtree(ast, a));
 		List<Expression> formalTypes = new LinkedList<>();
 		for (ITypeBinding ctorType : ctorBinding.getParameterTypes()) {
-			formalTypes.add(builder.newStringLit(ctorType.getErasure()
-					.getQualifiedName()));
+			formalTypes.add(builder.newStringLit(ctorType.getErasure().getQualifiedName()));
 		}
-		newCall.arguments().add(
-				builder.newArrayCreation(builder.newType("java.lang.String"),
-						formalTypes));
-		newCall.arguments().add(
-				builder.newArrayCreation(builder.newType("java.lang.Object"),
-						newArgs));
+		newCall.arguments().add(builder.newArrayCreation(builder.newType("java.lang.String"), formalTypes));
+		newCall.arguments().add(builder.newArrayCreation(builder.newType("java.lang.Object"), newArgs));
 		return newCall;
 	}
 
@@ -509,8 +450,7 @@ public class AutocheckVisitor extends ASTVisitor {
 				invocation.arguments().add(expr);
 				return invocation;
 			} else {
-				ParenthesizedExpression parens = ast
-						.newParenthesizedExpression();
+				ParenthesizedExpression parens = ast.newParenthesizedExpression();
 				parens.setExpression(expr);
 				return parens;
 			}
@@ -522,8 +462,7 @@ public class AutocheckVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(TypeLiteral node) {
 		String typeName = node.getType().resolveBinding().getQualifiedName();
-		ASTNode classofExpr = builder.newStaticCall("loadClass",
-				builder.newStringLit(typeName));
+		ASTNode classofExpr = builder.newStaticCall("loadClass", builder.newStringLit(typeName));
 		replaceNode(node, classofExpr);
 		return true;
 	}

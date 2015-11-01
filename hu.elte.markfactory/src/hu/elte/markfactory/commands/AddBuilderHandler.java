@@ -66,8 +66,7 @@ public class AddBuilderHandler extends AbstractHandler implements IHandler {
 		try {
 			IJavaProject javaProject = JavaCore.create(project);
 			IClasspathEntry[] rawClasspath = javaProject.getRawClasspath();
-			IClasspathEntry newCpEntry = JavaCore
-					.newContainerEntry(RuntimeLibraryContainerInitializer.LIBRARY_PATH);
+			IClasspathEntry newCpEntry = JavaCore.newContainerEntry(RuntimeLibraryContainerInitializer.LIBRARY_PATH);
 			if (Arrays.asList(rawClasspath).contains(newCpEntry)) {
 				// already added
 				return;

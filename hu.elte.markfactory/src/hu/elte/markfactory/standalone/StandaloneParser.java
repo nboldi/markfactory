@@ -10,8 +10,7 @@ import org.eclipse.jdt.core.dom.FileASTRequestor;
 
 public class StandaloneParser {
 
-	public static void loadFiles(Collection<String> inputFiles,
-			FileASTRequestor astRequestor, String[] classPath) {
+	public static void loadFiles(Collection<String> inputFiles, FileASTRequestor astRequestor, String[] classPath) {
 		ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setResolveBindings(true);
 		String[] encodings = new String[inputFiles.size()];
@@ -22,14 +21,12 @@ public class StandaloneParser {
 			sourceFiles[i] = inputFile;
 			++i;
 		}
-		
-		
-		Hashtable<String,String> options = JavaCore.getOptions();
+
+		Hashtable<String, String> options = JavaCore.getOptions();
 		options.put(JavaCore.COMPILER_SOURCE, "1.6");
 		parser.setCompilerOptions(options);
 		parser.setEnvironment(classPath, new String[] {}, new String[] {}, true);
-		parser.createASTs(sourceFiles, encodings, new String[] {},
-				astRequestor, null);
+		parser.createASTs(sourceFiles, encodings, new String[] {}, astRequestor, null);
 	}
 
 }

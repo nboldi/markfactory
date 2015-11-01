@@ -22,7 +22,7 @@ import hu.elte.markfactory.MarkfactoryPlugin;
  */
 public class RuntimeLibraryContainer implements IClasspathContainer {
 
-	public static final String[] BUNDLE_IDS_TO_INCLUDE = { MarkfactoryPlugin.PLUGIN_ID }; //$NON-NLS-1$
+	public static final String[] BUNDLE_IDS_TO_INCLUDE = { MarkfactoryPlugin.PLUGIN_ID }; // $NON-NLS-1$
 
 	private final IPath containerPath;
 	private IClasspathEntry[] classPathEnries;

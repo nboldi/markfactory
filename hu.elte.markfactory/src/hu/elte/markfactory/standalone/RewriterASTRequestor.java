@@ -27,8 +27,7 @@ public class RewriterASTRequestor extends FileASTRequestor {
 		try {
 			if (!inputOutputFiles.containsKey(sourceFilePath)) {
 				throw new RuntimeException(
-						"Input to output files map does not contain output file name for "
-								+ sourceFilePath);
+						"Input to output files map does not contain output file name for " + sourceFilePath);
 			}
 
 			AST ast = astRoot.getAST();
@@ -51,8 +50,7 @@ public class RewriterASTRequestor extends FileASTRequestor {
 		}
 	}
 
-	private void writeOutResult(String outputPath, String newSource)
-			throws IOException {
+	private void writeOutResult(String outputPath, String newSource) throws IOException {
 		File outFile = new File(outputPath);
 		if (!outFile.exists()) {
 			outFile.getParentFile().mkdirs();

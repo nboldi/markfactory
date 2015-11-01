@@ -43,8 +43,7 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 	public static final String BUILDER_ID = "hu.elte.markfactory.examtestbuilder";
 
 	@Override
-	protected IProject[] build(int kind, Map<String, String> args,
-			IProgressMonitor monitor) throws CoreException {
+	protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
 
 		final List<ICompilationUnit> compUnits = new LinkedList<>();
 		if (kind == AUTO_BUILD || kind == INCREMENTAL_BUILD) {
@@ -74,8 +73,7 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 		return null;
 	}
 
-	private boolean hasTestClass(ICompilationUnit compUnit)
-			throws JavaModelException {
+	private boolean hasTestClass(ICompilationUnit compUnit) throws JavaModelException {
 		if (!compUnit.isOpen())
 			return false;
 		for (IType type : compUnit.getAllTypes()) {
@@ -85,8 +83,7 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 		return false;
 	}
 
-	private boolean checkAnnotation(IJavaElement elem, Class<?> annot)
-			throws JavaModelException {
+	private boolean checkAnnotation(IJavaElement elem, Class<?> annot) throws JavaModelException {
 		if (!(elem instanceof IAnnotatable))
 			return false;
 		IAnnotation[] annotations = ((IAnnotatable) elem).getAnnotations();
@@ -97,8 +94,7 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 		return false;
 	}
 
-	private void processClass(ICompilationUnit compUnit)
-			throws JavaModelException {
+	private void processClass(ICompilationUnit compUnit) throws JavaModelException {
 		generateModifiedFile(compUnit);
 	}
 
@@ -129,8 +125,8 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 	}
 
 	private void writeOutResult(ICompilationUnit compUnit, String newSource, String projectName)
-			throws IOException, FileNotFoundException, CoreException {		
-		
+			throws IOException, FileNotFoundException, CoreException {
+
 		IProject autoProject = ProjectCreator.createOrUpdateProject(projectName);
 		IPath path = compUnit.getResource().getProjectRelativePath();
 
@@ -147,10 +143,8 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 		autoProject.findMember(path).setDerived(true, null);
 	}
 
-	private void addResourceAsCompUnit(final List<ICompilationUnit> compUnits,
-			IResource resource) {
-		if (resource.isAccessible() && !resource.isDerived()
-				&& resource.getType() == IResource.FILE) {
+	private void addResourceAsCompUnit(final List<ICompilationUnit> compUnits, IResource resource) {
+		if (resource.isAccessible() && !resource.isDerived() && resource.getType() == IResource.FILE) {
 			ICompilationUnit compUnit = null;
 			try {
 				IFile file = (IFile) resource;
