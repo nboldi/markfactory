@@ -83,14 +83,16 @@ public class AutocheckVisitor extends ASTVisitor {
 	public void endVisit(CompilationUnit node) {
 		boolean isTest = checkIfTestCompilation(node);
 		if (isTest) {
-			node.imports().removeIf(id -> annotationDetector.isTestSolution(((ImportDeclaration) id).resolveBinding()));
+			node.imports().removeIf(id -> {
+				return annotationDetector.isTestSolution(((ImportDeclaration) id).resolveBinding());
+			});
 		}
 	}
 
 	private boolean checkIfTestCompilation(CompilationUnit node) {
 		boolean isTest = false;
 		for (Object type : node.types()) {
-			if (annotationDetector.isTestSolution(((TypeDeclaration) type).resolveBinding())) {
+			if (annotationDetector.isTestClass((TypeDeclaration) type)) {
 				isTest = true;
 			} else {
 				if (isTest) {
