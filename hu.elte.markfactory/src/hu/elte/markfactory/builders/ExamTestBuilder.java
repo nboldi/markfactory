@@ -67,8 +67,9 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 			});
 		}
 		for (ICompilationUnit compUnit : compUnits) {
-			if (hasTestClass(compUnit))
+			if (hasTestClass(compUnit)) {
 				processClass(compUnit);
+			}
 		}
 		return null;
 	}
