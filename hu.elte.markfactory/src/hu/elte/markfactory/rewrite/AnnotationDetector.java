@@ -25,9 +25,11 @@ public class AnnotationDetector {
 
 	private static boolean hasAnnotation(Class<?> annotation, IBinding annotated) {
 		boolean hasAnnotation = false;
-		for (IAnnotationBinding annot : annotated.getAnnotations()) {
-			if (annot.getAnnotationType().getQualifiedName().equals(annotation.getName())) {
-				hasAnnotation = true;
+		if (annotated != null && annotated.getAnnotations() != null) {
+			for (IAnnotationBinding annot : annotated.getAnnotations()) {
+				if (annot.getAnnotationType().getQualifiedName().equals(annotation.getName())) {
+					hasAnnotation = true;
+				}
 			}
 		}
 		return hasAnnotation;

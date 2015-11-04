@@ -286,9 +286,10 @@ public class AutocheckVisitor extends ASTVisitor {
 	}
 
 	@Override
-	public boolean visit(FieldAccess node) {
-		replaceNode(node, genFieldGet(node.resolveFieldBinding(), node.getExpression()));
-		return true;
+	public void endVisit(FieldAccess node) {
+		if (annotationDetector.isTestSolution(node.getExpression().resolveTypeBinding())) {
+			replaceNode(node, genFieldGet(node.resolveFieldBinding(), node.getExpression()));
+		}
 	}
 
 	@Override
@@ -329,8 +330,8 @@ public class AutocheckVisitor extends ASTVisitor {
 	@Override
 	public void endVisit(MethodInvocation node) {
 		IMethodBinding binding = node.resolveMethodBinding();
-		handleMethodTypeArgs(node.typeArguments());
 		if (binding != null && annotationDetector.isTestSolution(binding.getDeclaringClass())) {
+			handleMethodTypeArgs(node.typeArguments());
 			MethodInvocation newCall = createReflCall(node);
 			if (binding.getReturnType().getName().equals("void")) {
 				replaceNode(node, newCall);

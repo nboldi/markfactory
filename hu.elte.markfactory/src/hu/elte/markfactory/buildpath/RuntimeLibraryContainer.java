@@ -46,8 +46,8 @@ public class RuntimeLibraryContainer implements IClasspathContainer {
 	private void addEntry(final List<IClasspathEntry> cpEntries, final String bundleId) {
 		Bundle bundle = Platform.getBundle(bundleId);
 		if (bundle != null) {
-			IPath bundlePath = bundlePath(bundle);
-			cpEntries.add(JavaCore.newLibraryEntry(bundlePath, null, null, new IAccessRule[] {}, null, false));
+			cpEntries.add(JavaCore.newLibraryEntry(bundlePath(bundle), bundleSourcePath(bundle), null,
+					new IAccessRule[] {}, null, false));
 		}
 	}
 
@@ -66,6 +66,32 @@ public class RuntimeLibraryContainer implements IClasspathContainer {
 
 	private IPath binFolderPath(Bundle bundle) {
 		URL binFolderURL = FileLocator.find(bundle, new Path("bin"), null);
+		if (binFolderURL != null) {
+			try {
+				URL binFolderFileURL = FileLocator.toFileURL(binFolderURL);
+				return new Path(binFolderFileURL.getPath()).makeAbsolute();
+			} catch (IOException e) {
+				MarkfactoryPlugin.logError("Can't resolve path '" + bundle.getSymbolicName() + "'", e); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+		}
+		return null;
+	}
+
+	private IPath bundleSourcePath(Bundle bundle) {
+		IPath path = srcFolderPath(bundle);
+		if (path == null) {
+			// common jar file case, no bin folder
+			try {
+				path = new Path(FileLocator.getBundleFile(bundle).getAbsolutePath());
+			} catch (IOException e) {
+				MarkfactoryPlugin.logError("Can't resolve path '" + bundle.getSymbolicName() + "'", e); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+		}
+		return path;
+	}
+
+	private IPath srcFolderPath(Bundle bundle) {
+		URL binFolderURL = FileLocator.find(bundle, new Path("src"), null);
 		if (binFolderURL != null) {
 			try {
 				URL binFolderFileURL = FileLocator.toFileURL(binFolderURL);

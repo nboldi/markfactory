@@ -7,6 +7,7 @@ import java.util.List;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -38,6 +39,7 @@ public class ProjectCreator {
 			setNature(project);
 			createBinFolder(project);
 			setupClassPath(JavaCore.create(project), "src");
+			project.refreshLocal(IResource.DEPTH_INFINITE, null);
 			project.build(IncrementalProjectBuilder.FULL_BUILD, null);
 		} catch (CoreException e) {
 			MarkfactoryPlugin.logError("Error while creating project", e);
@@ -97,6 +99,8 @@ public class ProjectCreator {
 		try {
 			List<IClasspathEntry> entries = new ArrayList<IClasspathEntry>(
 					Arrays.asList(javaProject.getRawClasspath()));
+			entries.remove(JavaCore.newSourceEntry(javaProject.getPath()));
+			// the root should not be a source directory
 			IClasspathEntry sourceEntry = JavaCore.newSourceEntry(javaProject.getPath().append(sourceFolder));
 			if (!entries.contains(sourceEntry)) {
 				entries.add(sourceEntry);

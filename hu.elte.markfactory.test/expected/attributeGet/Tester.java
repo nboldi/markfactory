@@ -8,7 +8,7 @@ public class Tester extends hu.elte.markfactory.testbase.ReflectionTester {
 	public static void test(Object tested) {
 		
 		try {
-			int b = (java.lang.Integer) fieldValue(tested, "a");
+			int b = ((java.lang.Integer) fieldValue(tested, "a"));
 		} catch (hu.elte.markfactory.testbase.MissingProgramElementException e) {
 			output(e);
 			return;

@@ -135,7 +135,7 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 			outFile.getParentFile().mkdirs();
 			outFile.createNewFile();
 		}
-		PrintWriter out = new PrintWriter(outFile);
+		PrintWriter out = new PrintWriter(outFile, "UTF-8");
 		out.println(newSource);
 		out.close();
 
