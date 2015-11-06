@@ -47,7 +47,7 @@ public class RuntimeLibraryContainer implements IClasspathContainer {
 		Bundle bundle = Platform.getBundle(bundleId);
 		if (bundle != null) {
 			cpEntries.add(JavaCore.newLibraryEntry(bundlePath(bundle), bundleSourcePath(bundle), null,
-					new IAccessRule[] {}, null, false));
+					new IAccessRule[] {}, null, true));
 		}
 	}
 
