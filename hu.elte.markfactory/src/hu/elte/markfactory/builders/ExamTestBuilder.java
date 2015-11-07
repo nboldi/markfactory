@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -31,12 +32,13 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
-import org.eclipse.text.edits.TextEdit;
 
 import hu.elte.markfactory.MarkfactoryPlugin;
 import hu.elte.markfactory.annotations.ExamTest;
 import hu.elte.markfactory.project.ProjectCreator;
 import hu.elte.markfactory.rewrite.AutocheckVisitor;
+import hu.elte.markfactory.rewrite.HandoutVisitor;
+import hu.elte.markfactory.rewrite.ModificationRecordingVisitor;
 
 public class ExamTestBuilder extends IncrementalProjectBuilder {
 
@@ -74,11 +76,10 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 	}
 
 	private boolean hasTestClass(ICompilationUnit compUnit) throws JavaModelException {
-		if (!compUnit.isOpen())
-			return false;
 		for (IType type : compUnit.getAllTypes()) {
-			if (checkAnnotation(type, ExamTest.class))
+			if (checkAnnotation(type, ExamTest.class)) {
 				return true;
+			}
 		}
 		return false;
 	}
@@ -95,10 +96,12 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 	}
 
 	private void processClass(ICompilationUnit compUnit) throws JavaModelException {
-		generateModifiedFile(compUnit);
+		generateModifiedFile(compUnit, "-autotest", AutocheckVisitor::new);
+		generateModifiedFile(compUnit, "-handout", HandoutVisitor::new);
 	}
 
-	private void generateModifiedFile(ICompilationUnit compUnit) {
+	private void generateModifiedFile(ICompilationUnit compUnit, String suffix,
+			Function<AST, ModificationRecordingVisitor> createVisitor) {
 		try {
 			ASTParser parser = ASTParser.newParser(AST.JLS8);
 			parser.setSource(compUnit);
@@ -110,13 +113,10 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 
 			Document document = new Document(compUnit.getSource());
 
-			AutocheckVisitor visitor = new AutocheckVisitor(ast);
-			astRoot.accept(visitor);
-			if (visitor.didRewrite()) {
-				TextEdit edits = astRoot.rewrite(document, null);
-				edits.apply(document);
-				String newSource = document.get();
-				writeOutResult(compUnit, newSource, project.getName() + "-autotest");
+			String newSource = createVisitor.apply(ast).runOn(astRoot, document);
+						
+			if (newSource != null) {
+				writeOutResult(compUnit, newSource, project.getName() + suffix);
 			}
 
 		} catch (MalformedTreeException | BadLocationException | CoreException | IOException e) {

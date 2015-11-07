@@ -12,6 +12,8 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
 import org.eclipse.jface.text.Document;
 import hu.elte.markfactory.rewrite.AutocheckVisitor;
+import hu.elte.markfactory.rewrite.ModificationRecordingVisitor;
+
 import org.eclipse.text.edits.TextEdit;
 
 public class RewriterASTRequestor extends FileASTRequestor {
@@ -36,7 +38,7 @@ public class RewriterASTRequestor extends FileASTRequestor {
 
 			Document document = new Document(loadFile(new File(sourceFilePath)));
 
-			AutocheckVisitor visitor = new AutocheckVisitor(ast);
+			ModificationRecordingVisitor visitor = new AutocheckVisitor(ast);
 			astRoot.accept(visitor);
 			TextEdit edits = astRoot.rewrite(document, null);
 			edits.apply(document);

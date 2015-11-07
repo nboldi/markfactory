@@ -7,6 +7,7 @@ import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
 import hu.elte.markfactory.rewrite.AutocheckVisitor;
+import hu.elte.markfactory.rewrite.ModificationRecordingVisitor;
 
 public class TestASTRequestor extends FileASTRequestor {
 
@@ -22,7 +23,7 @@ public class TestASTRequestor extends FileASTRequestor {
 		checkForProblems(sourceFilePath, compUnit);
 
 		if (isTestFile(sourceFilePath)) {
-			AutocheckVisitor visitor = new AutocheckVisitor(
+			ModificationRecordingVisitor visitor = new AutocheckVisitor(
 					compUnit.getAST());
 			compUnit.accept(visitor);
 			actualResults.put(sourceFilePath, compUnit);
