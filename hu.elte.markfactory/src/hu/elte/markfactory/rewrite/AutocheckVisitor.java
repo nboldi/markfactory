@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ArrayType;
@@ -50,10 +49,7 @@ import hu.elte.markfactory.testbase.MissingProgramElementException;
 import hu.elte.markfactory.testbase.ReflectionTester;
 
 @SuppressWarnings("unchecked")
-public class AutocheckVisitor extends ASTVisitor {
-
-	private AST ast;
-	private boolean rewriteDoneInCompUnit = false;
+public class AutocheckVisitor extends ModificationRecordingVisitor {
 
 	private ASTBuilder builder;
 
@@ -61,7 +57,7 @@ public class AutocheckVisitor extends ASTVisitor {
 	private TypeTransformer typeTransformer;
 
 	public AutocheckVisitor(AST ast) {
-		this.ast = ast;
+		super(ast);
 		builder = new ASTBuilder(ast);
 		typeTransformer = new TypeTransformer(ast, builder, annotationDetector);
 	}
@@ -70,10 +66,6 @@ public class AutocheckVisitor extends ASTVisitor {
 	public boolean visit(CompilationUnit node) {
 		rewriteDoneInCompUnit = false;
 		return true;
-	}
-
-	public boolean didRewrite() {
-		return rewriteDoneInCompUnit;
 	}
 
 	/**
@@ -266,7 +258,7 @@ public class AutocheckVisitor extends ASTVisitor {
 			return Optional.of(genFieldSet(fieldAccess.resolveFieldBinding(), fieldAccess.getExpression(), rightSide));
 		} else if (leftSide instanceof QualifiedName) {
 			QualifiedName qNameField = (QualifiedName) leftSide;
-			return Optional.of(
+			return Optional.ofNullable(
 					genFieldSet((IVariableBinding) qNameField.resolveBinding(), qNameField.getQualifier(), rightSide));
 		} else if (leftSide instanceof SuperFieldAccess) {
 			throw new TranslationException("Super field access is not supported.");
@@ -275,6 +267,9 @@ public class AutocheckVisitor extends ASTVisitor {
 	}
 
 	private Expression genFieldSet(IVariableBinding binding, Expression base, Expression rightSide) {
+		if (!annotationDetector.isTestSolution(base.resolveTypeBinding())) {
+			return null;
+		}
 		if ((binding.getModifiers() & Modifier.STATIC) != 0) {
 			return builder.newStaticCall("staticFieldSet",
 					builder.newStringLit(binding.getDeclaringClass().getQualifiedName()),
