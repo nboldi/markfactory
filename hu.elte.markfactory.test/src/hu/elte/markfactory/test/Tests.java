@@ -65,6 +65,11 @@ public class Tests {
 		runTest(EXPECTED_PREFIX + "variableDeclaration", TESTS_PREFIX + "variableDeclaration");
 	}
 	
+	@Test
+	public void testCompoundOps() throws Exception {
+		runTest(EXPECTED_PREFIX + "compoundOps", TESTS_PREFIX + "compoundOps");
+	}
+	
 	
 	private void runTest(String expectedDir, String testDir) {
 

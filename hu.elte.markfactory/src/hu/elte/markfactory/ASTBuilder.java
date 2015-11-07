@@ -11,6 +11,8 @@ import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
@@ -144,6 +146,18 @@ public class ASTBuilder {
 		ParenthesizedExpression newExpr = ast.newParenthesizedExpression();
 		newExpr.setExpression(expr);
 		return newExpr;
+	}
+
+	public Expression newInfixOperatorExpr(String operator, Expression leftOperand, Expression rightOperand) {
+		InfixExpression expression = ast.newInfixExpression();
+		expression.setOperator(Operator.toOperator(operator));
+		expression.setLeftOperand(leftOperand);
+		expression.setRightOperand(rightOperand);
+		return expression;
+	}
+
+	public Expression newIntLit(int i) {
+		return ast.newNumberLiteral(i + "");
 	}
 
 }

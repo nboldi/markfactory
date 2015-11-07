@@ -10,6 +10,7 @@ import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.Assignment.Operator;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CharacterLiteral;
@@ -28,6 +29,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleType;
@@ -240,8 +242,17 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 
 	@Override
 	public boolean visit(Assignment node) {
-		trasformAssignment(node.getLeftHandSide(), node.getRightHandSide())
+		transformAssignment(node.getOperator(), node.getLeftHandSide(), node.getRightHandSide())
 				.ifPresent(newAssign -> replaceNode(node, newAssign));
+		return true;
+	}
+
+	@Override
+	public boolean visit(PrefixExpression node) {
+		PrefixExpression.Operator operator = node.getOperator();
+		if (operator == PrefixExpression.Operator.INCREMENT || operator == PrefixExpression.Operator.DECREMENT) {
+			transformAssignment(operator, node.getOperand(), builder.newIntLit(1)).ifPresent(newExpr -> replaceNode(node, newExpr));
+		}
 		return true;
 	}
 
@@ -252,31 +263,41 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 	 * resolved by replacing the {@code this.field} expression to a
 	 * {@code getField} call.
 	 */
-	public Optional<Expression> trasformAssignment(Expression leftSide, Expression rightSide) {
+	public Optional<Expression> transformAssignment(Object operator, Expression leftSide, Expression rightSide) {
 		if (leftSide instanceof FieldAccess) {
 			FieldAccess fieldAccess = (FieldAccess) leftSide;
-			return Optional.of(genFieldSet(fieldAccess.resolveFieldBinding(), fieldAccess.getExpression(), rightSide));
+			return Optional.of(
+					genFieldSet(operator, fieldAccess.resolveFieldBinding(), fieldAccess.getExpression(), rightSide));
 		} else if (leftSide instanceof QualifiedName) {
 			QualifiedName qNameField = (QualifiedName) leftSide;
-			return Optional.ofNullable(
-					genFieldSet((IVariableBinding) qNameField.resolveBinding(), qNameField.getQualifier(), rightSide));
+			return Optional.ofNullable(genFieldSet(operator, (IVariableBinding) qNameField.resolveBinding(),
+					qNameField.getQualifier(), rightSide));
 		} else if (leftSide instanceof SuperFieldAccess) {
 			throw new TranslationException("Super field access is not supported.");
 		}
 		return Optional.empty();
 	}
 
-	private Expression genFieldSet(IVariableBinding binding, Expression base, Expression rightSide) {
+	private Expression genFieldSet(Object operator, IVariableBinding binding, Expression base, Expression rightSide) {
 		if (!annotationDetector.isTestSolution(base.resolveTypeBinding())) {
 			return null;
 		}
+		Expression assignedValue;
+		if (operator == Assignment.Operator.ASSIGN) {
+			assignedValue = builder.copy(rightSide);
+		} else {
+			String opStr = operator.toString();
+			assignedValue = builder.newInfixOperatorExpr(opStr.substring(0, opStr.length() - 1),
+					genFieldGet(binding, base), builder.copy(rightSide));
+		}
+
 		if ((binding.getModifiers() & Modifier.STATIC) != 0) {
 			return builder.newStaticCall("staticFieldSet",
 					builder.newStringLit(binding.getDeclaringClass().getQualifiedName()),
-					builder.newStringLit(binding.getName()), builder.copy(rightSide));
+					builder.newStringLit(binding.getName()), assignedValue);
 		} else {
 			return builder.newStaticCall("fieldSet", builder.copy(base), builder.newStringLit(binding.getName()),
-					builder.copy(rightSide));
+					assignedValue);
 		}
 	}
 

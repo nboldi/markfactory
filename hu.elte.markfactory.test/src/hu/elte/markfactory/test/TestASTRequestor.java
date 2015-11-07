@@ -32,12 +32,12 @@ public class TestASTRequestor extends FileASTRequestor {
 						.get(sourceFilePath))) {
 			CompilationUnit actual = actualResults.get(testFileMapping
 					.get(sourceFilePath));
-			boolean equals = ASTCompare.equals(compUnit, actual);
-			if (!equals) {
+			Object diff = ASTCompare.getDifference(compUnit, actual);
+			if (diff != null) {
 				throw new RuntimeException(
 						"The expected and the actual AST does not match. Expected file: "
 								+ sourceFilePath + ", actual content:\n"
-								+ actual);
+								+ actual + "\ndifference around: " + diff);
 			}
 		} else {
 			throw new RuntimeException("Unexpected AST: " + sourceFilePath);
