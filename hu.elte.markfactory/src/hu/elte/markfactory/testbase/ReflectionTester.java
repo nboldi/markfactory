@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.jdt.internal.ui.text.correction.ModifierCorrectionSubProcessor;
+
 import hu.elte.markfactory.annotations.TestSolution;
 
 public class ReflectionTester {
@@ -27,6 +29,10 @@ public class ReflectionTester {
 	public static Object construct(String className, Class<?>[] paramTypes, Object[] parameters) throws Throwable {
 		Constructor<?> c = loadConstructor(className, paramTypes);
 		try {
+			if ((c.getModifiers() & Modifier.PUBLIC) == 0) {
+				System.err.println(String.format("A(z) %s(%s) konstruktor nem lathato", c, Arrays.toString(paramTypes)));
+			}
+			c.setAccessible(true);
 			return c.newInstance(parameters);
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
@@ -169,6 +175,10 @@ public class ReflectionTester {
 		for (Method method : methods) {
 			if (method.getName().equals(methodName)) {
 				if (callable(method.getParameterTypes(), arguments)) {
+					if ((method.getModifiers() & Modifier.PUBLIC) == 0) {
+						System.err.println(String.format("A(z) %s metodus nem lathato", methodName));
+					}
+					method.setAccessible(true);
 					return method;
 				} else {
 					String message = String.format("Letezik %s nevu metodus (%s) parameterezessel.\n", method.getName(),
@@ -184,6 +194,10 @@ public class ReflectionTester {
 	public static Method loadStaticMethod(String className, String methodName, Class<?>[] arguments) throws Exception {
 		Class<?> cl = loadClass(className);
 		Method result = loadMethod(cl, methodName, arguments);
+		if ((result.getModifiers() & Modifier.PUBLIC) == 0) {
+			System.err.println(String.format("A(z) %s metodus nem lathato", methodName));
+		}
+		result.setAccessible(true);
 		if (Modifier.isStatic(result.getModifiers())) {
 			return result;
 		} else {
@@ -193,7 +207,13 @@ public class ReflectionTester {
 
 	public static Field loadField(Class<?> fieldClass, String fieldName) throws Exception {
 		try {
-			return fieldClass.getDeclaredField(fieldName);
+			Field field = fieldClass.getDeclaredField(fieldName);
+			if ((field.getModifiers() & Modifier.PUBLIC) == 0) {
+				System.err.println(String.format("A(z) %s adattag nem lathato", fieldName));
+			}
+			field.setAccessible(true);
+			return field;
+			
 		} catch (Exception e) {
 			throw new MissingProgramElementException(String.format("Nem erheto el a(z) %s adattag.", fieldName));
 		}
@@ -202,6 +222,10 @@ public class ReflectionTester {
 	public static Field loadStaticField(String className, String fieldName) throws Exception {
 		Class<?> cl = loadClass(className);
 		Field result = loadField(cl, fieldName);
+		if ((result.getModifiers() & Modifier.PUBLIC) == 0) {
+			System.err.println(String.format("A(z) %s adattag nem lathato", fieldName));
+		}
+		result.setAccessible(true);
 		if (Modifier.isStatic(result.getModifiers())) {
 			return result;
 		} else {
