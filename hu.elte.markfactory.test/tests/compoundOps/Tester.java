@@ -7,7 +7,19 @@ public class Tester {
 	@ExamExercise
 	public static void test() {
 		Tested.numeric += 10;
+		Tested.numeric -= 10;
+		Tested.numeric *= 10;
+		Tested.numeric /= 10;
+		Tested.numeric %= 10;
+		Tested.numeric |= 10;
+		Tested.numeric &= 10;
+		Tested.numeric <<= 10;
+		Tested.numeric >>= 10;
+		Tested.numeric ^= 10;
 		++Tested.numeric;
+		--Tested.numeric;
+		Tested.numeric++;
+		Tested.numeric--;
 	}
 	
 }

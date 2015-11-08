@@ -10,7 +10,6 @@ import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.Assignment;
-import org.eclipse.jdt.core.dom.Assignment.Operator;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CharacterLiteral;
@@ -29,6 +28,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.PostfixExpression;
 import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
@@ -43,6 +43,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+
 import hu.elte.markfactory.ASTBuilder;
 import hu.elte.markfactory.TranslationException;
 import hu.elte.markfactory.annotations.ExamExercise;
@@ -242,8 +243,9 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 
 	@Override
 	public boolean visit(Assignment node) {
-		transformAssignment(node.getOperator(), node.getLeftHandSide(), node.getRightHandSide())
-				.ifPresent(newAssign -> replaceNode(node, newAssign));
+		transformAssignment(node.getOperator(), AssignmentMode.RETURN_NEW, node.getLeftHandSide(),
+				node.getRightHandSide())
+						.ifPresent(newAssign -> replaceNode(node, wrapExpression(newAssign, node.getParent())));
 		return true;
 	}
 
@@ -251,8 +253,27 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 	public boolean visit(PrefixExpression node) {
 		PrefixExpression.Operator operator = node.getOperator();
 		if (operator == PrefixExpression.Operator.INCREMENT || operator == PrefixExpression.Operator.DECREMENT) {
-			transformAssignment(operator, node.getOperand(), builder.newIntLit(1)).ifPresent(newExpr -> replaceNode(node, newExpr));
+			transformAssignment(operator, AssignmentMode.RETURN_NEW, node.getOperand(), builder.newIntLit(1))
+					.ifPresent(newExpr -> replaceNode(node, wrapExpression(newExpr, node.getParent())));
 		}
+		return true;
+	}
+
+	private enum AssignmentMode {
+		RETURN_NEW(""), RETURN_OLD("ReturnOld");
+
+		private String suffix;
+
+		private AssignmentMode(String suffix) {
+			this.suffix = suffix;
+		}
+	};
+
+	@Override
+	public boolean visit(PostfixExpression node) {
+		PostfixExpression.Operator operator = node.getOperator();
+		transformAssignment(operator, AssignmentMode.RETURN_OLD, node.getOperand(), builder.newIntLit(1))
+				.ifPresent(newExpr -> replaceNode(node, wrapExpression(newExpr, node.getParent())));
 		return true;
 	}
 
@@ -263,14 +284,15 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 	 * resolved by replacing the {@code this.field} expression to a
 	 * {@code getField} call.
 	 */
-	public Optional<Expression> transformAssignment(Object operator, Expression leftSide, Expression rightSide) {
+	public Optional<Expression> transformAssignment(Object operator, AssignmentMode mode, Expression leftSide,
+			Expression rightSide) {
 		if (leftSide instanceof FieldAccess) {
 			FieldAccess fieldAccess = (FieldAccess) leftSide;
-			return Optional.of(
-					genFieldSet(operator, fieldAccess.resolveFieldBinding(), fieldAccess.getExpression(), rightSide));
+			return Optional.of(genFieldSet(operator, mode, fieldAccess.resolveFieldBinding(),
+					fieldAccess.getExpression(), rightSide));
 		} else if (leftSide instanceof QualifiedName) {
 			QualifiedName qNameField = (QualifiedName) leftSide;
-			return Optional.ofNullable(genFieldSet(operator, (IVariableBinding) qNameField.resolveBinding(),
+			return Optional.ofNullable(genFieldSet(operator, mode, (IVariableBinding) qNameField.resolveBinding(),
 					qNameField.getQualifier(), rightSide));
 		} else if (leftSide instanceof SuperFieldAccess) {
 			throw new TranslationException("Super field access is not supported.");
@@ -278,7 +300,8 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 		return Optional.empty();
 	}
 
-	private Expression genFieldSet(Object operator, IVariableBinding binding, Expression base, Expression rightSide) {
+	private Expression genFieldSet(Object operator, AssignmentMode mode, IVariableBinding binding, Expression base,
+			Expression rightSide) {
 		if (!annotationDetector.isTestSolution(base.resolveTypeBinding())) {
 			return null;
 		}
@@ -291,13 +314,19 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 					genFieldGet(binding, base), builder.copy(rightSide));
 		}
 
+		ITypeBinding typeBinding = binding.getType();
+		Type newType = annotationDetector.isTestSolution(typeBinding)
+				? typeTransformer.mostSpecificReplacement(typeBinding)
+				: typeTransformer.box(typeTransformer.typeFromBinding(typeBinding));
+
 		if ((binding.getModifiers() & Modifier.STATIC) != 0) {
-			return builder.newStaticCall("staticFieldSet",
-					builder.newStringLit(binding.getDeclaringClass().getQualifiedName()),
-					builder.newStringLit(binding.getName()), assignedValue);
+			return builder.newCast(newType,
+					builder.newStaticCall("staticFieldSet" + mode.suffix,
+							builder.newStringLit(binding.getDeclaringClass().getQualifiedName()),
+							builder.newStringLit(binding.getName()), assignedValue));
 		} else {
-			return builder.newStaticCall("fieldSet", builder.copy(base), builder.newStringLit(binding.getName()),
-					assignedValue);
+			return builder.newCast(newType, builder.newStaticCall("fieldSet" + mode.suffix, builder.copy(base),
+					builder.newStringLit(binding.getName()), assignedValue));
 		}
 	}
 

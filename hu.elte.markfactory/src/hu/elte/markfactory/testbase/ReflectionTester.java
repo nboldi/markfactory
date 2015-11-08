@@ -79,14 +79,30 @@ public class ReflectionTester {
 		return f.get(null);
 	}
 
-	public static void fieldSet(Object obj, String fieldName, Object newValue) throws Exception {
+	public static Object fieldSet(Object obj, String fieldName, Object newValue) throws Exception {
 		Field f = loadField(obj.getClass(), fieldName);
 		f.set(obj, newValue);
+		return newValue;
+	}
+	
+	public static Object fieldSetReturnOld(Object obj, String fieldName, Object newValue) throws Exception {
+		Object oldVal = fieldValue(obj, fieldName);
+		Field f = loadField(obj.getClass(), fieldName);
+		f.set(obj, newValue);
+		return oldVal;
 	}
 
-	public static void staticFieldSet(String className, String fieldName, Object newValue) throws Exception {
+	public static Object staticFieldSet(String className, String fieldName, Object newValue) throws Exception {
 		Field f = loadStaticField(className, fieldName);
 		f.set(null, newValue);
+		return newValue;
+	}
+	
+	public static Object staticFieldSetReturnOld(String className, String fieldName, Object newValue) throws Exception {
+		Object oldValue = staticFieldValue(className, fieldName);
+		Field f = loadStaticField(className, fieldName);
+		f.set(null, newValue);
+		return oldValue;
 	}
 
 	public static Object createArray(String clsName, Object[] elements) throws Exception {

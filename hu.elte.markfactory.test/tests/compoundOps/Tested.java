@@ -4,5 +4,6 @@ import hu.elte.markfactory.annotations.TestSolution;
 public class Tested {
 
 	public static int numeric;
+	public static boolean bool;
 	
 }
