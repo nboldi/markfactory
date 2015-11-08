@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import hu.elte.markfactory.annotations.TestSolution;
+
 public class ReflectionTester {
 
 	public static Object construct(String className, String[] paramTypes, Object[] parameters) throws Throwable {
@@ -42,7 +44,23 @@ public class ReflectionTester {
 		try {
 			return m.invoke(instance, parameters);
 		} catch (InvocationTargetException e) {
-			throw e.getCause();
+			throw removeSystemLines(e.getCause());
+		}
+	}
+
+	private static Throwable removeSystemLines(Throwable cause) {
+		StackTraceElement[] st = cause.getStackTrace();
+		LinkedList<StackTraceElement> stackTrace = new LinkedList<>(Arrays.asList(st));
+		stackTrace.removeIf(ReflectionTester::notTestSolution);
+		cause.setStackTrace(stackTrace.toArray(new StackTraceElement[stackTrace.size()]));
+		return cause;
+	}
+
+	private static boolean notTestSolution(StackTraceElement ste) {
+		try {
+			return Class.forName(ste.getClassName()).getDeclaredAnnotation(TestSolution.class) == null;
+		} catch (ClassNotFoundException e) {
+			return false;
 		}
 	}
 
@@ -57,7 +75,7 @@ public class ReflectionTester {
 		try {
 			return m.invoke(null, parameters);
 		} catch (InvocationTargetException e) {
-			throw e.getCause();
+			throw removeSystemLines(e.getCause());
 		}
 	}
 
