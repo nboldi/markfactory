@@ -8,10 +8,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.eclipse.jdt.internal.ui.text.correction.ModifierCorrectionSubProcessor;
+import java.util.Set;
 
 import hu.elte.markfactory.annotations.TestSolution;
 
@@ -30,7 +30,8 @@ public class ReflectionTester {
 		Constructor<?> c = loadConstructor(className, paramTypes);
 		try {
 			if ((c.getModifiers() & Modifier.PUBLIC) == 0) {
-				System.err.println(String.format("A(z) %s(%s) konstruktor nem lathato", c, Arrays.toString(paramTypes)));
+				System.err
+						.println(String.format("A(z) %s(%s) konstruktor nem lathato", c, Arrays.toString(paramTypes)));
 			}
 			c.setAccessible(true);
 			return c.newInstance(parameters);
@@ -108,7 +109,7 @@ public class ReflectionTester {
 		f.set(obj, newValue);
 		return newValue;
 	}
-	
+
 	public static Object fieldSetReturnOld(Object obj, String fieldName, Object newValue) throws Exception {
 		Object oldVal = fieldValue(obj, fieldName);
 		Field f = loadField(obj.getClass(), fieldName);
@@ -121,7 +122,7 @@ public class ReflectionTester {
 		f.set(null, newValue);
 		return newValue;
 	}
-	
+
 	public static Object staticFieldSetReturnOld(String className, String fieldName, Object newValue) throws Exception {
 		Object oldValue = staticFieldValue(className, fieldName);
 		Field f = loadStaticField(className, fieldName);
@@ -213,7 +214,7 @@ public class ReflectionTester {
 			}
 			field.setAccessible(true);
 			return field;
-			
+
 		} catch (Exception e) {
 			throw new MissingProgramElementException(String.format("Nem erheto el a(z) %s adattag.", fieldName));
 		}
@@ -241,8 +242,13 @@ public class ReflectionTester {
 		}
 	}
 
+	private static Set<String> exceptionsShown = new HashSet<>();
+
 	protected static void output(Exception e) {
-		System.err.println(e.getMessage());
+		if (!exceptionsShown.contains(e.getMessage())) {
+			exceptionsShown.add(e.getMessage());
+			System.err.println(e.getMessage());
+		}
 	}
 
 	protected static <T> void skip(T inp) {
