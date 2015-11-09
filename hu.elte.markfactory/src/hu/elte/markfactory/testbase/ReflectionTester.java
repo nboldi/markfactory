@@ -17,6 +17,8 @@ import hu.elte.markfactory.annotations.TestSolution;
 
 public class ReflectionTester {
 
+	private static Set<String> errorsShown = new HashSet<>();
+
 	public static Object construct(String className, String[] paramTypes, Object[] parameters) throws Throwable {
 		return construct(className, toClasses(paramTypes), parameters);
 	}
@@ -30,8 +32,8 @@ public class ReflectionTester {
 		Constructor<?> c = loadConstructor(className, paramTypes);
 		try {
 			if ((c.getModifiers() & Modifier.PUBLIC) == 0) {
-				System.err
-						.println(String.format("A(z) %s(%s) konstruktor nem lathato", c, Arrays.toString(paramTypes)));
+				System.err.println(String.format(Messages.ReflectionTester_constructorNotVisible, c.getName(),
+						TypeHelpers.showType(paramTypes)));
 			}
 			c.setAccessible(true);
 			return c.newInstance(parameters);
@@ -150,9 +152,8 @@ public class ReflectionTester {
 				return ctr;
 			}
 		}
-		throw new MissingProgramElementException(
-				String.format("Nem talalhato a(z) %s osztaly konstruktora, amely a (%s) parametereket fogadja el.",
-						className, TypeHelpers.showType(arguments)));
+		throw new MissingProgramElementException(String.format(Messages.ReflectionTester_constructorNotFound, className,
+				TypeHelpers.showType(arguments)));
 	}
 
 	private static boolean callable(Class<?>[] formalParams, Class<?>[] actualParams) {
@@ -177,18 +178,18 @@ public class ReflectionTester {
 			if (method.getName().equals(methodName)) {
 				if (callable(method.getParameterTypes(), arguments)) {
 					if ((method.getModifiers() & Modifier.PUBLIC) == 0) {
-						System.err.println(String.format("A(z) %s metodus nem lathato", methodName));
+						System.err.println(String.format(Messages.ReflectionTester_methodNotVisible, methodName));
 					}
 					method.setAccessible(true);
 					return method;
 				} else {
-					String message = String.format("Letezik %s nevu metodus (%s) parameterezessel.\n", method.getName(),
+					String message = String.format(Messages.ReflectionTester_methodFound, method.getName(),
 							TypeHelpers.showType(method.getParameterTypes()));
 					additionalInfos.append(message);
 				}
 			}
 		}
-		throw new MissingProgramElementException(String.format("Nem erheto el a(z) %s(%s) metodus. %s", methodName,
+		throw new MissingProgramElementException(String.format(Messages.ReflectionTester_methodNotFound, methodName,
 				TypeHelpers.showType(arguments), additionalInfos.toString()));
 	}
 
@@ -196,13 +197,14 @@ public class ReflectionTester {
 		Class<?> cl = loadClass(className);
 		Method result = loadMethod(cl, methodName, arguments);
 		if ((result.getModifiers() & Modifier.PUBLIC) == 0) {
-			System.err.println(String.format("A(z) %s metodus nem lathato", methodName));
+			System.err.println(String.format(Messages.ReflectionTester_methodNotVisible, methodName));
 		}
 		result.setAccessible(true);
 		if (Modifier.isStatic(result.getModifiers())) {
 			return result;
 		} else {
-			throw new MissingProgramElementException(String.format("A(z) %s metodus nem statikus.", methodName));
+			throw new MissingProgramElementException(
+					String.format(Messages.ReflectionTester_methodNotStatic, methodName));
 		}
 	}
 
@@ -210,13 +212,13 @@ public class ReflectionTester {
 		try {
 			Field field = fieldClass.getDeclaredField(fieldName);
 			if ((field.getModifiers() & Modifier.PUBLIC) == 0) {
-				System.err.println(String.format("A(z) %s adattag nem lathato", fieldName));
+				System.err.println(String.format(Messages.ReflectionTester_fieldNotVisible, fieldName));
 			}
 			field.setAccessible(true);
 			return field;
 
 		} catch (Exception e) {
-			throw new MissingProgramElementException(String.format("Nem erheto el a(z) %s adattag.", fieldName));
+			throw new MissingProgramElementException(String.format(Messages.ReflectionTester_fieldNotFound, fieldName));
 		}
 	}
 
@@ -224,13 +226,14 @@ public class ReflectionTester {
 		Class<?> cl = loadClass(className);
 		Field result = loadField(cl, fieldName);
 		if ((result.getModifiers() & Modifier.PUBLIC) == 0) {
-			System.err.println(String.format("A(z) %s adattag nem lathato", fieldName));
+			System.err.println(String.format(Messages.ReflectionTester_fieldNotVisible, fieldName));
 		}
 		result.setAccessible(true);
 		if (Modifier.isStatic(result.getModifiers())) {
 			return result;
 		} else {
-			throw new MissingProgramElementException(String.format("A(z) %s adattag nem statikus.", fieldName));
+			throw new MissingProgramElementException(
+					String.format(Messages.ReflectionTester_fieldNotStatic, fieldName));
 		}
 	}
 
@@ -238,15 +241,13 @@ public class ReflectionTester {
 		try {
 			return TypeHelpers.parseType(TypeHelpers.encodeType(className));
 		} catch (Exception e) {
-			throw new MissingProgramElementException(String.format("Nem toltheto be a(z) %s osztaly.", className));
+			throw new MissingProgramElementException(String.format(Messages.ReflectionTester_classNotFound, className));
 		}
 	}
 
-	private static Set<String> exceptionsShown = new HashSet<>();
-
 	protected static void output(Exception e) {
-		if (!exceptionsShown.contains(e.getMessage())) {
-			exceptionsShown.add(e.getMessage());
+		if (!errorsShown.contains(e.getMessage())) {
+			errorsShown.add(e.getMessage());
 			System.err.println(e.getMessage());
 		}
 	}
@@ -254,36 +255,4 @@ public class ReflectionTester {
 	protected static <T> void skip(T inp) {
 	}
 
-	public static void checkAPI(String className, String[] expectedInterface) throws Exception {
-		try {
-			Class<?> cl = loadClass(className);
-			List<String> actualInterface = new ArrayList<String>();
-
-			for (Method method : cl.getDeclaredMethods()) {
-				if ((method.getModifiers() & Modifier.PUBLIC) > 0 && !method.isSynthetic() && !method.isBridge()) {
-					actualInterface.add(TypeHelpers.methodSignature(method));
-				}
-			}
-			for (Constructor<?> ctor : cl.getDeclaredConstructors()) {
-				if ((ctor.getModifiers() & Modifier.PUBLIC) > 0 && !ctor.isSynthetic()) {
-					actualInterface.add(TypeHelpers.ctorSignature(ctor));
-				}
-			}
-			for (Field field : cl.getDeclaredFields()) {
-				if ((field.getModifiers() & Modifier.PUBLIC) > 0 && !field.isSynthetic()) {
-					actualInterface.add(field.getName());
-				}
-			}
-
-			actualInterface.removeAll(Arrays.asList(expectedInterface));
-
-			if (!actualInterface.isEmpty()) {
-				throw new UnsupportedOperationException(String.format(
-						"A(z) %s osztaly olyan publikus metodusokat vagy adattagokat tartalmaz, amelyet nem kert a feladat: %s!",
-						className, actualInterface.toString()));
-			}
-		} catch (ClassNotFoundException e) {
-			// ok, if class is not defined there can be no API problems
-		}
-	}
 }

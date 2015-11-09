@@ -48,6 +48,8 @@ public class RuntimeLibraryContainer implements IClasspathContainer {
 		if (bundle != null) {
 			cpEntries.add(JavaCore.newLibraryEntry(bundlePath(bundle), bundleSourcePath(bundle), null,
 					new IAccessRule[] {}, null, true));
+		} else {
+			MarkfactoryPlugin.logError("Cannot find bundle " + bundleId);
 		}
 	}
 
