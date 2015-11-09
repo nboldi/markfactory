@@ -127,10 +127,10 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 	private void writeOutResult(ICompilationUnit compUnit, String newSource, String projectName)
 			throws IOException, FileNotFoundException, CoreException {
 
-		IProject autoProject = ProjectCreator.createOrUpdateProject(projectName);
+		IProject project = ProjectCreator.createOrUpdateProject(projectName);
 		IPath path = compUnit.getResource().getProjectRelativePath();
 
-		File outFile = autoProject.getLocation().append(path).toFile();
+		File outFile = project.getLocation().append(path).toFile();
 		if (!outFile.exists()) {
 			outFile.getParentFile().mkdirs();
 			outFile.createNewFile();
@@ -139,8 +139,9 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 		out.println(newSource);
 		out.close();
 
-		autoProject.refreshLocal(IProject.DEPTH_INFINITE, null);
-		autoProject.findMember(path).setDerived(true, null);
+		project.refreshLocal(IProject.DEPTH_INFINITE, null);
+		project.findMember(path).setDerived(true, null);
+		project.build(IncrementalProjectBuilder.CLEAN_BUILD, null);
 	}
 
 	private void addResourceAsCompUnit(final List<ICompilationUnit> compUnits, IResource resource) {

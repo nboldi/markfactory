@@ -39,8 +39,6 @@ public class ProjectCreator {
 			setNature(project);
 			createBinFolder(project);
 			setupClassPath(JavaCore.create(project), "src");
-			project.refreshLocal(IResource.DEPTH_INFINITE, null);
-			project.build(IncrementalProjectBuilder.FULL_BUILD, null);
 		} catch (CoreException e) {
 			MarkfactoryPlugin.logError("Error while creating project", e);
 		}
