@@ -150,8 +150,8 @@ public class ReflectionTester {
 			}
 		}
 		throw new MissingProgramElementException(
-				String.format("Nem talalhato a(z) %s osztaly konstruktora, amely a %s parametereket fogadja el.",
-						className, Arrays.toString(arguments)));
+				String.format("Nem talalhato a(z) %s osztaly konstruktora, amely a (%s) parametereket fogadja el.",
+						className, TypeHelpers.showType(arguments)));
 	}
 
 	private static boolean callable(Class<?>[] formalParams, Class<?>[] actualParams) {
