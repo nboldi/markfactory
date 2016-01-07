@@ -6,20 +6,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import hu.elte.markfactory.annotations.TestSolution;
-
 public class ReflectionTester {
 
 	private static Set<String> errorsShown = new HashSet<>();
 
-	public static Object construct(String className, String[] paramTypes, Object[] parameters) throws Throwable {
+	public static Object construct(String className, String[] paramTypes, Object[] parameters) {
 		return construct(className, toClasses(paramTypes), parameters);
 	}
 
@@ -28,7 +25,7 @@ public class ReflectionTester {
 	 * types of the arguments. Should only be used when there are constructors
 	 * that differ only in the boxedness of their arguments.
 	 */
-	public static Object construct(String className, Class<?>[] paramTypes, Object[] parameters) throws Throwable {
+	public static Object construct(String className, Class<?>[] paramTypes, Object[] parameters) {
 		Constructor<?> c = loadConstructor(className, paramTypes);
 		try {
 			if ((c.getModifiers() & Modifier.PUBLIC) == 0) {
@@ -37,58 +34,78 @@ public class ReflectionTester {
 			}
 			c.setAccessible(true);
 			return c.newInstance(parameters);
+
 		} catch (InvocationTargetException e) {
-			throw e.getCause();
+			Throwable cause = removeSystemLines(e.getCause());
+			if (cause instanceof RuntimeException) {
+				throw (RuntimeException) cause;
+			} else {
+				throw new RuntimeException(cause);
+			}
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
-	public static Object call(String methodName, Object instance, String[] paramTypes, Object[] parameters)
-			throws Throwable {
+	public static Object call(String methodName, Object instance, String[] paramTypes, Object[] parameters) {
 		return call(methodName, instance, toClasses(paramTypes), parameters);
 	}
 
-	public static Object call(String methodName, Object instance, Class<?>[] paramTypes, Object[] parameters)
-			throws Throwable {
+	public static Object call(String methodName, Object instance, Class<?>[] paramTypes, Object[] parameters) {
 		Method m = loadMethod(instance.getClass(), methodName, paramTypes);
 		try {
 			return m.invoke(instance, parameters);
 		} catch (InvocationTargetException e) {
-			throw removeSystemLines(e.getCause());
+			Throwable cause = removeSystemLines(e.getCause());
+			if (cause instanceof RuntimeException) {
+				throw (RuntimeException) cause;
+			} else {
+				throw new RuntimeException(cause);
+			}
+		} catch (IllegalAccessException | IllegalArgumentException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
 	private static Throwable removeSystemLines(Throwable cause) {
 		StackTraceElement[] st = cause.getStackTrace();
 		LinkedList<StackTraceElement> stackTrace = new LinkedList<>(Arrays.asList(st));
-		stackTrace.removeIf(ReflectionTester::notTestSolution);
+		// stackTrace.removeIf(ReflectionTester::notTestSolution);
 		cause.setStackTrace(stackTrace.toArray(new StackTraceElement[stackTrace.size()]));
 		return cause;
 	}
 
-	private static boolean notTestSolution(StackTraceElement ste) {
-		try {
-			return Class.forName(ste.getClassName()).getDeclaredAnnotation(TestSolution.class) == null;
-		} catch (ClassNotFoundException e) {
-			return false;
-		}
-	}
+	// private static boolean notTestSolution(StackTraceElement ste) {
+	// try {
+	// Class<?> cls = Class.forName(ste.getClassName());
+	// return cls.getDeclaredAnnotation(TestSolution.class) == null
+	// && cls.getDeclaredAnnotation(ExamTest.class) == null;
+	// } catch (ClassNotFoundException e) {
+	// return false;
+	// }
+	// }
 
-	public static Object staticCall(String className, String method, String[] paramTypes, Object[] parameters)
-			throws Throwable {
+	public static Object staticCall(String className, String method, String[] paramTypes, Object[] parameters) {
 		return staticCall(className, method, toClasses(paramTypes), parameters);
 	}
 
-	public static Object staticCall(String className, String method, Class<?>[] paramTypes, Object[] parameters)
-			throws Throwable {
+	public static Object staticCall(String className, String method, Class<?>[] paramTypes, Object[] parameters) {
 		Method m = loadStaticMethod(className, method, paramTypes);
 		try {
 			return m.invoke(null, parameters);
 		} catch (InvocationTargetException e) {
-			throw removeSystemLines(e.getCause());
+			Throwable cause = removeSystemLines(e.getCause());
+			if (cause instanceof RuntimeException) {
+				throw (RuntimeException) cause;
+			} else {
+				throw new RuntimeException(cause);
+			}
+		} catch (IllegalAccessException | IllegalArgumentException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
-	private static Class<?>[] toClasses(String[] paramTypes) throws Exception {
+	private static Class<?>[] toClasses(String[] paramTypes) {
 		Class<?>[] newParamTypes = new Class<?>[paramTypes.length];
 		for (int i = 0; i < paramTypes.length; i++) {
 			newParamTypes[i] = loadClass(paramTypes[i]);
@@ -96,47 +113,72 @@ public class ReflectionTester {
 		return newParamTypes;
 	}
 
-	public static Object fieldValue(Object obj, String fieldName) throws Exception {
+	public static Object fieldValue(Object obj, String fieldName) {
 		Field f = loadField(obj.getClass(), fieldName);
-		return f.get(obj);
+		try {
+			return f.get(obj);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
-	public static Object staticFieldValue(String className, String fieldName) throws Exception {
+	public static Object staticFieldValue(String className, String fieldName) {
 		Field f = loadStaticField(className, fieldName);
-		return f.get(null);
+		try {
+			return f.get(null);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
-	public static Object fieldSet(Object obj, String fieldName, Object newValue) throws Exception {
+	public static Object fieldSet(Object obj, String fieldName, Object newValue) {
 		Field f = loadField(obj.getClass(), fieldName);
-		f.set(obj, newValue);
+		try {
+			f.set(obj, newValue);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
 		return newValue;
 	}
 
-	public static Object fieldSetReturnOld(Object obj, String fieldName, Object newValue) throws Exception {
+	public static Object fieldSetReturnOld(Object obj, String fieldName, Object newValue) {
 		Object oldVal = fieldValue(obj, fieldName);
 		Field f = loadField(obj.getClass(), fieldName);
-		f.set(obj, newValue);
+		try {
+			f.set(obj, newValue);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return oldVal;
 	}
 
-	public static Object staticFieldSet(String className, String fieldName, Object newValue) throws Exception {
+	public static Object staticFieldSet(String className, String fieldName, Object newValue) {
 		Field f = loadStaticField(className, fieldName);
-		f.set(null, newValue);
+		try {
+			f.set(null, newValue);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			new RuntimeException(e);
+		}
 		return newValue;
 	}
 
-	public static Object staticFieldSetReturnOld(String className, String fieldName, Object newValue) throws Exception {
+	public static Object staticFieldSetReturnOld(String className, String fieldName, Object newValue) {
 		Object oldValue = staticFieldValue(className, fieldName);
 		Field f = loadStaticField(className, fieldName);
-		f.set(null, newValue);
+		try {
+			f.set(null, newValue);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
 		return oldValue;
 	}
 
-	public static Object createArray(String clsName, Object[] elements) throws Exception {
+	public static Object createArray(String clsName, Object[] elements) {
 		return createArray(loadClass(clsName), elements);
 	}
 
-	private static Object createArray(Class<?> cls, Object[] elements) throws Exception {
+	private static Object createArray(Class<?> cls, Object[] elements) {
 		Object newArray = Array.newInstance(cls, elements.length);
 		for (int i = 0; i < elements.length; i++) {
 			Array.set(newArray, i, elements[i]);
@@ -144,7 +186,7 @@ public class ReflectionTester {
 		return newArray;
 	}
 
-	public static Constructor<?> loadConstructor(String className, Class<?>... arguments) throws Exception {
+	public static Constructor<?> loadConstructor(String className, Class<?>... arguments) {
 		Class<?> cl = loadClass(className);
 		for (Constructor<?> ctr : cl.getDeclaredConstructors()) {
 			Class<?>[] paramTypes = ctr.getParameterTypes();
@@ -169,7 +211,7 @@ public class ReflectionTester {
 		return false;
 	}
 
-	public static Method loadMethod(Class<?> methodClass, String methodName, Class<?>[] arguments) throws Exception {
+	public static Method loadMethod(Class<?> methodClass, String methodName, Class<?>[] arguments) {
 
 		StringBuilder additionalInfos = new StringBuilder();
 		List<Method> methods = new LinkedList<>(Arrays.asList(methodClass.getDeclaredMethods()));
@@ -193,7 +235,7 @@ public class ReflectionTester {
 				TypeHelpers.showType(arguments), additionalInfos.toString()));
 	}
 
-	public static Method loadStaticMethod(String className, String methodName, Class<?>[] arguments) throws Exception {
+	public static Method loadStaticMethod(String className, String methodName, Class<?>[] arguments) {
 		Class<?> cl = loadClass(className);
 		Method result = loadMethod(cl, methodName, arguments);
 		if ((result.getModifiers() & Modifier.PUBLIC) == 0) {
@@ -208,7 +250,7 @@ public class ReflectionTester {
 		}
 	}
 
-	public static Field loadField(Class<?> fieldClass, String fieldName) throws Exception {
+	public static Field loadField(Class<?> fieldClass, String fieldName) {
 		try {
 			Field field = fieldClass.getDeclaredField(fieldName);
 			if ((field.getModifiers() & Modifier.PUBLIC) == 0) {
@@ -222,7 +264,7 @@ public class ReflectionTester {
 		}
 	}
 
-	public static Field loadStaticField(String className, String fieldName) throws Exception {
+	public static Field loadStaticField(String className, String fieldName) {
 		Class<?> cl = loadClass(className);
 		Field result = loadField(cl, fieldName);
 		if ((result.getModifiers() & Modifier.PUBLIC) == 0) {
@@ -237,7 +279,7 @@ public class ReflectionTester {
 		}
 	}
 
-	public static Class<?> loadClass(String className) throws Exception {
+	public static Class<?> loadClass(String className) {
 		try {
 			return TypeHelpers.parseType(TypeHelpers.encodeType(className));
 		} catch (Exception e) {

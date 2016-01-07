@@ -1,8 +1,10 @@
 package hu.elte.markfactory.rewrite;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -369,13 +371,30 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 		return builder.paren(builder.newCast(newType, get));
 	}
 
+	Set<MethodInvocation> invocationsToRewrite = new HashSet<>();
+
+	/**
+	 * Marks method invocations for rewriting. Had to do this in the visit pass,
+	 * because we may rewrite the base expression.
+	 */
+	@Override
+	public boolean visit(MethodInvocation node) {
+		IMethodBinding binding = node.resolveMethodBinding();
+		ITypeBinding baseType = node.getExpression() != null ? node.getExpression().resolveTypeBinding()
+				: binding.getDeclaringClass();
+		if (binding != null && annotationDetector.isTestSolution(baseType)) {
+			invocationsToRewrite.add(node);
+		}
+		return super.visit(node);
+	}
+
 	/**
 	 * Replaces normal method calls with reflection calls.
 	 */
 	@Override
 	public void endVisit(MethodInvocation node) {
 		IMethodBinding binding = node.resolveMethodBinding();
-		if (binding != null && annotationDetector.isTestSolution(binding.getDeclaringClass())) {
+		if (invocationsToRewrite.contains(node)) {
 			handleMethodTypeArgs(node.typeArguments());
 			MethodInvocation newCall = createReflCall(node);
 			if (binding.getReturnType().getName().equals("void")) {

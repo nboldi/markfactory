@@ -19,6 +19,10 @@ public class AnnotationDetector {
 		return hasAnnotation(TestSolution.class, typ) || hasAnnotation(DummyChild.class, typ);
 	}
 
+	public boolean isDummyChild(IBinding typ) {
+		return hasAnnotation(DummyChild.class, typ);
+	}
+	
 	public boolean isTestClass(TypeDeclaration node) {
 		return hasAnnotation(ExamTest.class, node.resolveBinding());
 	}

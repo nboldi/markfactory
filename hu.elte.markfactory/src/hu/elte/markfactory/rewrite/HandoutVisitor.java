@@ -10,6 +10,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -63,6 +64,9 @@ public class HandoutVisitor extends ModificationRecordingVisitor {
 		if (removeAnnots(node.modifiers())) {
 			rewriteDoneInCompUnit = true;
 		}
+//		if (annotationDetector.isDummyChild(node.resolveBinding())) {
+//			commentNode(node);
+//		}
 		return true;
 	}
 
@@ -71,6 +75,14 @@ public class HandoutVisitor extends ModificationRecordingVisitor {
 		if (removeAnnots(node.modifiers())) {
 			rewriteDoneInCompUnit = true;
 			commentBody(node.getBody());
+		}
+		return true;
+	}
+	
+	@Override
+	public boolean visit(FieldDeclaration node) {
+		if (annotationDetector.isTestSolution(node.getType().resolveBinding())) {
+			commentNode(node);
 		}
 		return true;
 	}

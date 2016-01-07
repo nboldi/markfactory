@@ -37,7 +37,7 @@ public class TypeTransformer {
 		if (typeBnd != null && annotationDetector.isTestSolution(typeBnd)) {
 			return Optional.of(mostSpecificReplacement(typeBnd));
 		}
-		boolean changed = false;
+		boolean[] changed = new boolean[] { false };
 		Type copy = (Type) ASTNode.copySubtree(ast, type);
 		if (type.isParameterizedType()) {
 			ParameterizedType pType = (ParameterizedType) type;
@@ -48,18 +48,30 @@ public class TypeTransformer {
 				final int ind = i;
 				Optional<Type> cleanTypeParam = cleanType((Type) typeArguments.get(ind),
 						typeBnd.getTypeArguments()[ind]);
-				cleanTypeParam.ifPresent(t -> pCopy.typeArguments().set(ind, t));
-				changed |= cleanTypeParam.isPresent();
+				cleanTypeParam.ifPresent(t -> {
+					pCopy.typeArguments().set(ind, t);
+					changed[0] = true;
+				});
 			}
 		}
 		if (type.isArrayType()) {
 			ArrayType at = (ArrayType) type;
 			ArrayType aCopy = (ArrayType) copy;
 			Optional<Type> cleanElemType = cleanType(at.getElementType(), typeBnd.getElementType());
-			cleanElemType.ifPresent(t -> aCopy.setElementType(t));
-			changed |= cleanElemType.isPresent();
+			cleanElemType.ifPresent(t -> {
+				aCopy.setElementType(t);
+				changed[0] = true;
+			});
 		}
-		if (changed) {
+		if (type.isWildcardType()) {
+			WildcardType wt = (WildcardType) type;
+			WildcardType wCopy = (WildcardType) copy;
+			cleanType(wt.getBound(), typeBnd.getBound()).ifPresent(cl -> {
+				wCopy.setBound(cl, wt.isUpperBound());
+				changed[0] = true;
+			});
+		}
+		if (changed[0]) {
 			return Optional.of(copy);
 		} else {
 			return Optional.empty();
@@ -69,7 +81,7 @@ public class TypeTransformer {
 	public SimpleType mostSpecificReplacement(ITypeBinding iTypeBinding) {
 		for (ITypeBinding ancestor : ancestors(iTypeBinding)) {
 			if (!annotationDetector.isTestSolution(ancestor)) {
-				return ast.newSimpleType(ast.newSimpleName(ancestor.getName()));
+				return ast.newSimpleType(ast.newSimpleName(ancestor.getErasure().getName()));
 			}
 		}
 		return ast.newSimpleType(ast.newName(Object.class.getName()));
@@ -115,6 +127,12 @@ public class TypeTransformer {
 			}
 
 			return type;
+		}
+
+		if (typeBinding.isWildcardType()) {
+			WildcardType ret = ast.newWildcardType();
+			ret.setBound(typeFromBinding(typeBinding.getBound()), typeBinding.isUpperbound());
+			return ret;
 		}
 
 		// simple or raw type

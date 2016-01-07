@@ -34,6 +34,7 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
 
 import hu.elte.markfactory.MarkfactoryPlugin;
+import hu.elte.markfactory.annotations.DummyChild;
 import hu.elte.markfactory.annotations.ExamTest;
 import hu.elte.markfactory.project.ProjectCreator;
 import hu.elte.markfactory.rewrite.AutocheckVisitor;
@@ -77,7 +78,7 @@ public class ExamTestBuilder extends IncrementalProjectBuilder {
 
 	private boolean hasTestClass(ICompilationUnit compUnit) throws JavaModelException {
 		for (IType type : compUnit.getAllTypes()) {
-			if (checkAnnotation(type, ExamTest.class)) {
+			if (checkAnnotation(type, ExamTest.class) || checkAnnotation(type, DummyChild.class)) {
 				return true;
 			}
 		}
