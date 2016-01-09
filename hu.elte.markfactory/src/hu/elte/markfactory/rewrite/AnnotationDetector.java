@@ -16,7 +16,7 @@ public class AnnotationDetector {
 	}
 
 	public boolean isTestSolution(IBinding typ) {
-		return hasAnnotation(TestSolution.class, typ) || hasAnnotation(DummyChild.class, typ);
+		return hasAnnotation(TestSolution.class, typ);
 	}
 
 	public boolean isDummyChild(IBinding typ) {

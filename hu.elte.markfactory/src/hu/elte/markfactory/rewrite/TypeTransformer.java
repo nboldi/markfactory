@@ -46,6 +46,9 @@ public class TypeTransformer {
 
 			for (int i = 0; i < typeArguments.size(); i++) {
 				final int ind = i;
+				if (typeBnd == null) {
+					continue;
+				}
 				Optional<Type> cleanTypeParam = cleanType((Type) typeArguments.get(ind),
 						typeBnd.getTypeArguments()[ind]);
 				cleanTypeParam.ifPresent(t -> {

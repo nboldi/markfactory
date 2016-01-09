@@ -382,7 +382,7 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 		IMethodBinding binding = node.resolveMethodBinding();
 		ITypeBinding baseType = node.getExpression() != null ? node.getExpression().resolveTypeBinding()
 				: binding.getDeclaringClass();
-		if (binding != null && annotationDetector.isTestSolution(baseType)) {
+		if (binding != null && (annotationDetector.isTestSolution(baseType) || annotationDetector.isDummyChild(baseType))) {
 			invocationsToRewrite.add(node);
 		}
 		return super.visit(node);
@@ -528,7 +528,11 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 
 	@Override
 	public boolean visit(TypeLiteral node) {
-		String typeName = node.getType().resolveBinding().getQualifiedName();
+		ITypeBinding typeBinding = node.getType().resolveBinding();
+		if (typeBinding == null) {
+			return true;
+		}
+		String typeName = typeBinding.getQualifiedName();
 		ASTNode classofExpr = builder.newStaticCall("loadClass", builder.newStringLit(typeName));
 		replaceNode(node, classofExpr);
 		return true;
