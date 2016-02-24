@@ -2,6 +2,7 @@ package hu.elte.markfactory;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -124,6 +125,14 @@ public class ASTBuilder {
 			initializer.expressions().add(expr);
 		}
 		ac.setInitializer(initializer);
+		ac.setType(ast.newArrayType(type));
+		return ac;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Expression newArrayCreationFromDimensions(Type type, List<Expression> dimensions) {
+		ArrayCreation ac = ast.newArrayCreation();
+		ac.dimensions().addAll(dimensions);
 		ac.setType(ast.newArrayType(type));
 		return ac;
 	}

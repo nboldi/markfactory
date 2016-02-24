@@ -230,14 +230,22 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 
 	@Override
 	public void endVisit(ArrayCreation node) {
-		if (typeTransformer.cleanType(node.getType()).isPresent()) {
+		Optional<Type> cleanType = typeTransformer.cleanType(node.getType());
+		if (cleanType.isPresent()) {
 			ArrayType nodeType = node.getType();
 			Type elementType = nodeType.getElementType();
+			String qname = ((ArrayType) cleanType.get()).getElementType().resolveBinding().toString();
+			ArrayType objArrayType = ast.newArrayType(builder.newType(qname));
 			ITypeBinding typeBnd = elementType.resolveBinding();
 
-			ArrayInitializer initializer = (ArrayInitializer) ASTNode.copySubtree(ast, node.getInitializer());
-			ArrayType objArrayType = ast.newArrayType(builder.newType(Object.class.getCanonicalName()));
-			Expression newArrayCreation = builder.newArrayCreation(Object.class.getCanonicalName(), initializer);
+			Expression newArrayCreation;
+			if (node.getInitializer() != null) {
+				ArrayInitializer initializer = (ArrayInitializer) ASTNode.copySubtree(ast, node.getInitializer());
+				newArrayCreation = builder.newArrayCreation(qname, initializer);
+			} else {
+				newArrayCreation = builder.newArrayCreationFromDimensions(builder.newType(qname),
+						(List<Expression>) node.dimensions());
+			}
 			replaceNode(node, builder.newCast(objArrayType, builder.newStaticCall("createArray",
 					builder.newStringLit(typeBnd.getQualifiedName()), newArrayCreation)));
 		}
@@ -382,7 +390,8 @@ public class AutocheckVisitor extends ModificationRecordingVisitor {
 		IMethodBinding binding = node.resolveMethodBinding();
 		ITypeBinding baseType = node.getExpression() != null ? node.getExpression().resolveTypeBinding()
 				: binding.getDeclaringClass();
-		if (binding != null && (annotationDetector.isTestSolution(baseType) || annotationDetector.isDummyChild(baseType))) {
+		if (binding != null
+				&& (annotationDetector.isTestSolution(baseType) || annotationDetector.isDummyChild(baseType))) {
 			invocationsToRewrite.add(node);
 		}
 		return super.visit(node);
